@@ -4,7 +4,9 @@
   "description": "",
   "main": "rank.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node rank.js",
+    "dev": "node rank.js --dev",
+    "clean": "npm cache clean --force"
   },
   "author": "",
   "license": "ISC",

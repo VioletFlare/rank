@@ -1,6 +1,7 @@
 const Rank = require('./Rank.js');
 const config = require('../config.js');
 const Discord = require("discord.js");
+const fs = require('fs');
 
 class InstanceManager {
     
@@ -31,17 +32,10 @@ class InstanceManager {
         this.sessions.set(guild.id, new Rank(guild));
     }
 
-    _setActivity() {
-        this.client.user.setActivity(
-            `🐖 Username`, {type: 'PLAYING'}
-        );
-    }
-
     _setEvents() {
         this.client.on("ready", () => {
             console.log(`Logged in as ${this.client.user.tag}, id ${this.client.user.id}!`);
-
-            this._setActivity();
+            
             this._initSessions();
           });
           
@@ -54,6 +48,14 @@ class InstanceManager {
         );
     }
 
+    _createDataDir() {        
+        const dir = './data';
+
+        if (!fs.existsSync(dir)){
+            fs.mkdirSync(dir);
+        }
+    }
+
     init() {
         if (this.isDev) {
             this.client.login(config.TOKEN_DEV);
@@ -62,6 +64,7 @@ class InstanceManager {
         }
 
         this._setEvents();
+        this._createDataDir();
     }
 
 }
