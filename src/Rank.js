@@ -1,3 +1,7 @@
+const lockFile = require('proper-lockfile');
+const fs = require('fs');
+const path = require('path');
+
 class Rank {
 
     constructor(guild) {
@@ -9,18 +13,27 @@ class Rank {
     }
 
     _setActivity(username) {
-
-        this.client.user.setActivity(
+        this.guild.client.user.setActivity(
             `🐖 ${username}`, {type: 'PLAYING'}
         );
     }
+
+    _debounce(func, timeout = 10000) {
+        let timer;
+        return (...args) => {
+          clearTimeout(timer);
+          timer = setTimeout(
+            () => { func.apply(this, args); }, timeout
+          );
+        };
+      }
 
     _updateLedger(userId) {
         const userExists = this.ledger.get(userId);
 
         if (userExists) {
             this.ledger.set(
-                userId, map.set(userId, map.get(userId) + 1)
+                userId, this.ledger.get(userId) + 1
             );
         } else {
             this.ledger.set(userId, 1);
@@ -32,7 +45,20 @@ class Rank {
     }
 
     _saveLedger() {
+        const fileName = path.join(".", "data", `${this.guild.id}_ledger.json`);
         
+        lockFile
+            .lock(fileName)
+            .then(
+                () => {
+                    const ledgerObj = Object.fromEntries(this.ledger);
+                    const json = JSON.stringify(ledgerObj);
+                    fs.writeFile(fileName, json, () => {});
+
+                    return lockFile.unlock(fileName);
+                }
+            );
+           
     }
 
     _sendPiggyMessage() {
@@ -48,7 +74,7 @@ class Rank {
 
     _handleTopUser() {
         this._sendPiggyMessage();
-        
+        this._setActivity(this.msg.author.username);
         this.hasTopUserChanged = false;
     }
 
@@ -69,7 +95,7 @@ class Rank {
          // track stack again into it.
          const topUser = this.trackStack[this.trackStack.length - 1];
 
-         if (user.msgCount > topUser.msgCount) {
+         if (user.msgCount > topUser.msgCount && topUser.id != user.id) {
             this.trackStack.push(user);
             this.hasTopUserChanged = true;
          } else {
@@ -97,6 +123,12 @@ class Rank {
             this._updateTrackStack(user);
             
             if (this.hasTopUserChanged) this._handleTopUser();
+
+            const _dbSaveLedger = this._debounce(
+                () => this._saveLedger()
+            );
+
+            _dbSaveLedger();
         }
     }
 }

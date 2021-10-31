@@ -2,6 +2,7 @@ const Rank = require('./Rank.js');
 const config = require('../config.js');
 const Discord = require("discord.js");
 const fs = require('fs');
+const path = require('path');
 
 class InstanceManager {
     
@@ -28,8 +29,16 @@ class InstanceManager {
         }
     }
 
+    _createGuildDataFile(guildId) {
+        const configPath = path.join("./data", `${guildId}_ledger.json`);
+
+        fs.open(configPath , 'w', () => {})
+    }
+
     _initSession(guild) {
         this.sessions.set(guild.id, new Rank(guild));
+
+        this._createGuildDataFile(guild.id);
     }
 
     _setEvents() {
