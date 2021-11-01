@@ -1,11 +1,13 @@
 const lockFile = require('proper-lockfile');
 const fs = require('fs');
 const path = require('path');
+const Discord = require("discord.js");
+const Client  = new Discord.Client();
 
 class Rank {
 
     constructor(guild) {
-        this.trackStack = [];
+        this.leaderBoard = [];
         this.guild = guild;
         this.ledger = new Map();
         this.hasTopUserChanged = false;
@@ -77,70 +79,73 @@ class Rank {
         this.hasTopUserChanged = false;
     }
 
-    _switchTopUser(user) {
-        for (let i = 0; i < this.trackStack.length; i++) {
-            if (this.trackStack[i].id === user.id) {
-                this.trackStack.splice(i, 1);
+    _removeDuplicate(user) {
+        for (let i = 0; i < this.leaderBoard.length; i++) {
+            if (this.leaderBoard[i].id === user.id) {
+                this.leaderBoard.splice(i, 1);
             }
         }
+    }
 
-        this.trackStack.push(user);
-        this.hasTopUserChanged = true;
+    _switchTopUser(user) {
+        this._removeDuplicate(user);
+        this.leaderBoard.push(user);
     }
 
     /*
     _updateUserMsgCount(user) {
-        for (let i = 0; i < this.trackStack.length; i++) {
-            if (this.trackStack[i].id === user.id) {
-                this.trackStack[i].msgCount = user.msgCount;
+        for (let i = 0; i < this.leaderBoard.length; i++) {
+            if (this.leaderBoard[i].id === user.id) {
+                this.leaderBoard[i].msgCount = user.msgCount;
             }
         }
     }
     */
 
     _removeExcessiveTrackStackEntry() {
-        if (this.trackStack.length > 10) {
-            this.trackStack.splice(0, 1);
+        if (this.leaderBoard.length > 10) {
+            this.leaderBoard.splice(0, 1);
         }
     }
 
     _appendAtProperIndex(user) {
-        for (let i = 0; i < this.trackStack.length; i++) {
-            if (this.trackStack[i].msgCount < user.msgCount) {
-                const firstPart = this.trackStack.slice(0, i);
-                const secondPart = this.trackStack.slice(i);
+        for (let i = 0; i < this.leaderBoard.length; i++) {
+            if (this.leaderBoard[i].msgCount > user.msgCount) {
+                const firstPart = this.leaderBoard.slice(0, i);
+                const secondPart = this.leaderBoard.slice(i);
 
                 firstPart.push(user);
 
-                firstPart.concat(secondPart);
+                this.leaderBoard = firstPart.concat(secondPart);
                 break;
             };
         }
     }
 
-    _updateTrackStack(user) {
-        if (this.trackStack.length === 0) {
-            this.trackStack.push(user);
-            this.hasTopUserChanged = true;
+    _updateLeaderBoard(user, isLoading) {
+        if (this.leaderBoard.length === 0) {
+            this.leaderBoard.push(user);
+            this.hasTopUserChanged = !isLoading;
             return;
         }
 
-        const topUser = this.trackStack[this.trackStack.length - 1];
+        const topUser = this.leaderBoard[this.leaderBoard.length - 1];
         const hasMoreMessagesThanTopUser = user.msgCount > topUser.msgCount;
         const isNotTopUser = topUser.id != user.id;
 
         if (hasMoreMessagesThanTopUser && isNotTopUser) {
             this._switchTopUser(user);
+            this.hasTopUserChanged = !isLoading;
         } else {
+            this._removeDuplicate(user);
             this._appendAtProperIndex(user);
-            //this._updateUserMsgCount(user);
         }
 
         this._removeExcessiveTrackStackEntry();
     }
 
     _getTopUser() {
-        return this.trackStack[this.trackStack.length - 1];
+        return this.leaderBoard[this.leaderBoard.length - 1];
     }
 
     loadGuildDataFile() {
@@ -158,8 +163,14 @@ class Rank {
                     msgCount: msgCount
                 }
 
-                this._updateTrackStack(user);
+                this._updateLeaderBoard(user, true);
             }
+
+            const topUser = this.leaderBoard[this.leaderBoard.length - 1];
+
+            this.guild.client.users.fetch(topUser.id).then((user) => {
+                this._setActivity(user.username);
+            });
         }
     }
 
@@ -176,7 +187,7 @@ class Rank {
                 msgCount: msgCount
             }
 
-            this._updateTrackStack(user);
+            this._updateLeaderBoard(user);
 
             if (this.hasTopUserChanged) this._handleTopUser();
 
