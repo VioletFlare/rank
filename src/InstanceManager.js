@@ -23,16 +23,18 @@ class InstanceManager {
 
     _initSessions() {
         if (!this.sessions.size) {
-            for (const [key, value] of this.client.guilds.cache.entries()) {
-                this.sessions.set(key, new Rank(value));
+            for (const [guildId, guild] of this.client.guilds.cache.entries()) {
+                const rank = new Rank(guild);
+                rank.loadGuildDataFile();
+                this.sessions.set(guildId, rank);
             }
         }
     }
 
     _createGuildDataFile(guildId) {
-        const configPath = path.join("./data", `${guildId}_ledger.json`);
+        const ledgerPath = path.join("./data", `${guildId}_ledger.json`);
 
-        fs.open(configPath , 'w', () => {})
+        fs.open(ledgerPath , 'w', () => {})
     }
 
     _initSession(guild) {
