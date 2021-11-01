@@ -92,7 +92,6 @@ class Rank {
         this.leaderBoard.push(user);
     }
 
-    /*
     _updateUserMsgCount(user) {
         for (let i = 0; i < this.leaderBoard.length; i++) {
             if (this.leaderBoard[i].id === user.id) {
@@ -100,7 +99,6 @@ class Rank {
             }
         }
     }
-    */
 
     _removeExcessiveTrackStackEntry() {
         if (this.leaderBoard.length > 10) {
@@ -109,16 +107,26 @@ class Rank {
     }
 
     _appendAtProperIndex(user) {
-        for (let i = 0; i < this.leaderBoard.length; i++) {
-            if (this.leaderBoard[i].msgCount > user.msgCount) {
-                const firstPart = this.leaderBoard.slice(0, i);
-                const secondPart = this.leaderBoard.slice(i);
+        const leaderBoard = this.leaderBoard.filter(
+            record => record.id === user.id
+        );
 
-                firstPart.push(user);
-
-                this.leaderBoard = firstPart.concat(secondPart);
-                break;
-            };
+        if (!leaderBoard.length) {
+            for (let i = 0; i < this.leaderBoard.length; i++) {
+                const isLesserThanCurrent = 
+                    this.leaderBoard[i].msgCount > user.msgCount
+    
+                if (isLesserThanCurrent) {
+                    const firstPart = this.leaderBoard.slice(0, i);
+                    const secondPart = this.leaderBoard.slice(i);
+                    
+                    firstPart.push(user);
+    
+                    this.leaderBoard = firstPart.concat(secondPart);
+                    
+                    break;
+                };
+            }
         }
     }
 
@@ -137,8 +145,8 @@ class Rank {
             this._switchTopUser(user);
             this.hasTopUserChanged = !isLoading;
         } else {
-            this._removeDuplicate(user);
             this._appendAtProperIndex(user);
+            this._updateUserMsgCount(user);
         }
 
         this._removeExcessiveTrackStackEntry();
@@ -162,7 +170,6 @@ class Rank {
                     id: id,
                     msgCount: msgCount
                 }
-
                 this._updateLeaderBoard(user, true);
             }
 
