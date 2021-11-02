@@ -31,22 +31,26 @@ class InstanceManager {
         }
     }
 
-    _createGuildDataFile(guildId) {
-        const ledgerPath = path.join("./data", `${guildId}_ledger.json`);
+    _createDataFiles() {
+        const guildIds = this.client.guilds.cache.map(guild => guild.id);
 
-        fs.open(ledgerPath , 'w', () => {})
+        guildIds.forEach(guildId => {
+            const ledgerPath = path.join("./data", `${guildId}_ledger.json`);
+
+            fs.open(ledgerPath, 'a', () => {})
+        })
     }
 
     _initSession(guild) {
         this.sessions.set(guild.id, new Rank(guild));
-
-        this._createGuildDataFile(guild.id);
     }
 
     _setEvents() {
         this.client.on("ready", () => {
             console.log(`Logged in as ${this.client.user.tag}, id ${this.client.user.id}!`);
             
+            this._createDataDir();
+            this._createDataFiles();
             this._initSessions();
           });
           
@@ -75,7 +79,6 @@ class InstanceManager {
         }
 
         this._setEvents();
-        this._createDataDir();
     }
 
 }

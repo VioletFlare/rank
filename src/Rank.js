@@ -181,8 +181,42 @@ class Rank {
         }
     }
 
+    _sendLeaderBoardEmbed(leaderBoardRepresentation) {
+        const embed = new Discord.MessageEmbed()
+            .setColor('#DAA520')
+            .setTitle("Leader Board                 ")
+            .setDescription(leaderBoardRepresentation)
+            .setThumbnail('https://i.imgur.com/v5RR3ro.png')
+    
+        this.msg.reply(embed);
+    }
+
+    _printLeaderBoard() {
+        const leaderBoardTopBottom = this.leaderBoard.reverse();
+        let leaderBoardRepresentation = "";
+        let userIdPromiseArray = [];
+
+        leaderBoardTopBottom.forEach((record) => {
+            userIdPromiseArray.push(this.guild.client.users.fetch(record.id));
+        })
+
+        Promise.all(userIdPromiseArray).then(
+            (values) => {
+                values.forEach((user, position) => {
+                    leaderBoardRepresentation = `${position + 1}. ${user.username}\n`;
+                })
+
+                this._sendLeaderBoardEmbed(leaderBoardRepresentation);
+            }
+        );
+
+    }
+
     onMessage(msg) {
         this.msg = msg;
+        if (this.msg.content === "r/leaderboard") {
+            this._printLeaderBoard();
+        }
 
         if (!this.msg.author.bot) {
             const userId = this.msg.author.id;
