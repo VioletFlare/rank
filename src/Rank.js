@@ -15,7 +15,7 @@ class Rank {
 
     _setActivity(username) {
         this.guild.client.user.setActivity(
-            `🐖 ${username}`, { type: 'PLAYING' }
+            `🏆 ${username}`, { type: 'PLAYING' }
         );
     }
 
@@ -74,7 +74,7 @@ class Rank {
     }
 
     _handleTopUser() {
-        this._sendPiggyMessage();
+        //this._sendPiggyMessage();
         this._setActivity(this.msg.author.username);
         this.hasTopUserChanged = false;
     }
@@ -108,25 +108,22 @@ class Rank {
 
     _appendAtProperIndex(user) {
         const leaderBoard = this.leaderBoard.filter(
-            record => record.id === user.id
+            record => record.id !== user.id
         );
 
-        if (!leaderBoard.length) {
-            for (let i = 0; i < this.leaderBoard.length; i++) {
-                const isLesserThanCurrent = 
-                    this.leaderBoard[i].msgCount > user.msgCount
+        for (let i = 0; i < leaderBoard.length; i++) {
+            const isLesserThanCurrent = 
+                leaderBoard[i].msgCount > user.msgCount
     
-                if (isLesserThanCurrent) {
-                    const firstPart = this.leaderBoard.slice(0, i);
-                    const secondPart = this.leaderBoard.slice(i);
+            if (isLesserThanCurrent) {
+
+                const firstPart = leaderBoard.slice(0, i);
+                const secondPart = leaderBoard.slice(i);
+                firstPart.push(user);
+                this.leaderBoard = firstPart.concat(secondPart);
                     
-                    firstPart.push(user);
-    
-                    this.leaderBoard = firstPart.concat(secondPart);
-                    
-                    break;
-                };
-            }
+                break;
+            };
         }
     }
 
@@ -184,26 +181,35 @@ class Rank {
     _sendLeaderBoardEmbed(leaderBoardRepresentation) {
         const embed = new Discord.MessageEmbed()
             .setColor('#DAA520')
-            .setTitle("Leader Board                 ")
+            .setTitle("👑 Leader Board                 ")
             .setDescription(leaderBoardRepresentation)
             .setThumbnail('https://i.imgur.com/v5RR3ro.png')
+            .setFooter("⭐ Number of messages committed.")
     
         this.msg.reply(embed);
     }
 
+    _createRecordTable() {
+        
+    }
+
     _printLeaderBoard() {
-        const leaderBoardTopBottom = this.leaderBoard.reverse();
+        const leaderBoardTopBottom = this.leaderBoard.slice().reverse();
         let leaderBoardRepresentation = "";
-        let userIdPromiseArray = [];
+        let usersPromises = [];
 
         leaderBoardTopBottom.forEach((record) => {
-            userIdPromiseArray.push(this.guild.client.users.fetch(record.id));
+            usersPromises.push(this.guild.client.users.fetch(record.id));
         })
 
-        Promise.all(userIdPromiseArray).then(
-            (values) => {
-                values.forEach((user, position) => {
-                    leaderBoardRepresentation = `${position + 1}. ${user.username}\n`;
+        Promise.all(usersPromises).then(
+            (users) => {
+                users.forEach((user, index) => {
+                    const username = user.username.padEnd(32, " ");
+                    const msgCount = leaderBoardTopBottom[index].msgCount.toString().padEnd(6, " ");
+                    const position = index + 1; 
+
+                    leaderBoardRepresentation += `\`${position}. ${username} ⭐ ${msgCount}\`\n`;
                 })
 
                 this._sendLeaderBoardEmbed(leaderBoardRepresentation);
@@ -214,9 +220,6 @@ class Rank {
 
     onMessage(msg) {
         this.msg = msg;
-        if (this.msg.content === "r/leaderboard") {
-            this._printLeaderBoard();
-        }
 
         if (!this.msg.author.bot) {
             const userId = this.msg.author.id;
@@ -237,6 +240,10 @@ class Rank {
             );
 
             _dbSaveLedger();
+        }
+
+        if (this.msg.content === "r/leaderboard") {
+            this._printLeaderBoard();
         }
     }
 }
