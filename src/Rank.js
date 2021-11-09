@@ -11,6 +11,7 @@ class Rank {
         this.guild = guild;
         this.ledger = new Map();
         this.hasTopUserChanged = false;
+        this.date = {};
     }
 
     _setActivity(username) {
@@ -62,19 +63,43 @@ class Rank {
 
     }
 
-    _sendPiggyMessage() {
-        const mention = this.msg.author.toString();
+    _getDate() {
+        const fileName = path.join(".", "data", `${this.guild.id}_date.json`);
+        const data = fs.readFileSync(fileName, 'utf8');
+        config = null;
 
-        const message = `
-🇮🇹:     ${mention} è un maiale 🐽 
-🇬🇧:     ${mention} is a piggy 🐽
-`;
+        if (data) {
+            config = JSON.parse(data);
+        } 
 
-        this.msg.channel.send(message);
+        return config;
+    }
+
+    _saveTime() {
+        const date = this._getDate();
+
+        if (!date) {
+            const fileName = path.join(".", "data", `${this.guild.id}_date.json`);
+
+            lockFile
+                .lock(fileName)
+                .then(
+                    () => {
+                        const date = new Date();
+
+                        this.date.year = date.getUTCFullYear();
+                        this.date.month = date.getUTCMonth() + 1;
+                        const json = JSON.stringify(this.date);
+                        
+                        fs.writeFile(fileName, json, () => { });
+    
+                        return lockFile.unlock(fileName);
+                    }
+                );
+        }
     }
 
     _handleTopUser() {
-        //this._sendPiggyMessage();
         this._setActivity(this.msg.author.username);
         this.hasTopUserChanged = false;
     }
@@ -100,7 +125,7 @@ class Rank {
         }
     }
 
-    _removeExcessiveTrackStackEntry() {
+    _removeExcessiveLeaderBoardEntry() {
         if (this.leaderBoard.length > 10) {
             this.leaderBoard.splice(0, 1);
         }
@@ -131,6 +156,8 @@ class Rank {
         if (this.leaderBoard.length === 0) {
             this.leaderBoard.push(user);
             this.hasTopUserChanged = !isLoading;
+
+            console.log(`${user.id} added to leaderboard.`);
             return;
         }
 
@@ -144,9 +171,11 @@ class Rank {
         } else {
             this._appendAtProperIndex(user);
             this._updateUserMsgCount(user);
+
+            console.log(`${user.id} added to leaderboard.`);
         }
 
-        this._removeExcessiveTrackStackEntry();
+        this._removeExcessiveLeaderBoardEntry();
     }
 
     _getTopUser() {
@@ -189,9 +218,6 @@ class Rank {
         this.msg.reply(embed);
     }
 
-    _createRecordTable() {
-        
-    }
 
     _printLeaderBoard() {
         const leaderBoardTopBottom = this.leaderBoard.slice().reverse();

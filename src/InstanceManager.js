@@ -36,8 +36,10 @@ class InstanceManager {
 
         guildIds.forEach(guildId => {
             const ledgerPath = path.join("./data", `${guildId}_ledger.json`);
+            const timePath = path.join("./data", `${guildId}_date.json`);
 
-            fs.open(ledgerPath, 'a', () => {})
+            fs.open(ledgerPath, 'a', () => {});
+            fs.open(timePath, 'a', () => {});
         })
     }
 
@@ -52,7 +54,7 @@ class InstanceManager {
             this._createDataDir();
             this._createDataFiles();
             this._initSessions();
-          });
+        });
           
         this.client.on(
             "message", msg => this._onMessage(msg)
