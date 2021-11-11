@@ -4,6 +4,16 @@ const path = require('path');
 const Discord = require("discord.js");
 const Client  = new Discord.Client();
 
+/*
+    Three roles containing respectively "Famous", "Veteran" and "Advanced" should be present in the server;
+    
+    1. Famous
+    2. Veteran
+    3. Advanced
+
+    Are roles assigned respecitvely to the position in the leaderboard every.
+*/
+
 class Rank {
 
     constructor(guild) {
@@ -63,42 +73,6 @@ class Rank {
 
     }
 
-    _getDate() {
-        const fileName = path.join(".", "data", `${this.guild.id}_date.json`);
-        const data = fs.readFileSync(fileName, 'utf8');
-        config = null;
-
-        if (data) {
-            config = JSON.parse(data);
-        } 
-
-        return config;
-    }
-
-    _saveTime() {
-        const date = this._getDate();
-
-        if (!date) {
-            const fileName = path.join(".", "data", `${this.guild.id}_date.json`);
-
-            lockFile
-                .lock(fileName)
-                .then(
-                    () => {
-                        const date = new Date();
-
-                        this.date.year = date.getUTCFullYear();
-                        this.date.month = date.getUTCMonth() + 1;
-                        const json = JSON.stringify(this.date);
-                        
-                        fs.writeFile(fileName, json, () => { });
-    
-                        return lockFile.unlock(fileName);
-                    }
-                );
-        }
-    }
-
     _handleTopUser() {
         this._setActivity(this.msg.author.username);
         this.hasTopUserChanged = false;
@@ -137,10 +111,10 @@ class Rank {
         );
 
         for (let i = 0; i < leaderBoard.length; i++) {
-            const isLesserThanCurrent = 
+            const shouldAddUser = 
                 leaderBoard[i].msgCount > user.msgCount
     
-            if (isLesserThanCurrent) {
+            if (shouldAddUser) {
 
                 const firstPart = leaderBoard.slice(0, i);
                 const secondPart = leaderBoard.slice(i);
@@ -182,7 +156,7 @@ class Rank {
         return this.leaderBoard[this.leaderBoard.length - 1];
     }
 
-    loadGuildDataFile() {
+    loadLedger() {
         const ledgerPath = path.join("./data", `${this.guild.id}_ledger.json`);
         const data = fs.readFileSync(ledgerPath, 'utf8')
 
@@ -242,6 +216,114 @@ class Rank {
             }
         );
 
+    }
+
+    _getDate() {
+        const fileName = path.join(".", "data", `${this.guild.id}_date.json`);
+        const data = fs.readFileSync(fileName, 'utf8');
+        let config = null;
+
+        if (data) {
+            config = JSON.parse(data);
+        } 
+
+        return config;
+    }
+
+    _saveDate() {
+        if (!this.date) {
+            const fileName = path.join(".", "data", `${this.guild.id}_date.json`);
+
+            lockFile
+                .lock(fileName)
+                .then(
+                    () => {
+                        this.date = {
+                            then: Date.now()
+                        }
+                        const json = JSON.stringify(this.date.then);
+                        
+                        fs.writeFile(fileName, json, () => { });
+    
+                        return lockFile.unlock(fileName);
+                    }
+                );
+        }
+    }
+
+    _clearData() {
+        const ledgerPath = path.join("./data", `${this.guild.id}_ledger.json`)
+        const dateFileName = path.join(".", "data", `${this.guild.id}_date.json`);
+
+        this.date = null;
+        this.leaderBoard = [];
+        this.ledger = new Map()
+
+        fs.writeFile(ledgerPath, "", () => { });
+        fs.writeFile(dateFileName, "", () => { });
+    }
+
+    _assignRole(leaderBoard, roleName, position) {
+        const role = this.guild.roles.cache.find(
+            role => role.name.includes(roleName)
+        );
+
+        if (role && leaderBoard[position]) {
+            const firstPositionUser = this.guild.members.cache.get(leaderBoard[0].id);
+            firstPositionUser.roles.add(role);
+        }
+    }
+
+    _clearRole(roleName) {
+        const role = this.guild.roles.cache.find(
+            role => role.name.includes(roleName)
+        );
+
+        role.members.forEach(user => {
+            console.log(user);
+            //user.roles.remove(role);
+        });
+    }
+
+    _manageRoles() {
+        const leaderBoardTopBottom = this.leaderBoard.slice().reverse();
+
+        this._clearRole("Famous");
+        this._clearRole("Veteran");
+        this._clearRole("Advanced");
+
+        this._assignRole(leaderBoardTopBottom, "Famous", 0);
+        this._assignRole(leaderBoardTopBottom, "Veteran", 1);
+        this._assignRole(leaderBoardTopBottom, "Advanced", 2);
+    }
+
+    _checkIfMonthHasPassed() {
+        // 2592000000 ms - 1 Month
+        let hasAMonthPassed;
+
+        if (this.date) {
+            hasAMonthPassed = Date.now() - this.date.then >= 60000;
+        } else {
+            hasAMonthPassed = true;
+        }
+        
+        if (hasAMonthPassed) {
+            this._manageRoles();
+            this._clearData();
+        }
+    }
+
+    loadDate() {
+        //3600000 ms - 1 Hour
+
+        this.date = {
+            then: this._getDate()
+        };
+
+        setInterval(() => {
+            this._checkIfMonthHasPassed();
+            this._saveDate();
+        }, 5000);
     }
 
     onMessage(msg) {

@@ -25,7 +25,8 @@ class InstanceManager {
         if (!this.sessions.size) {
             for (const [guildId, guild] of this.client.guilds.cache.entries()) {
                 const rank = new Rank(guild);
-                rank.loadGuildDataFile();
+                rank.loadLedger();
+                rank.loadDate();
                 this.sessions.set(guildId, rank);
             }
         }
