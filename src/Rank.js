@@ -2,7 +2,6 @@ const lockFile = require('proper-lockfile');
 const fs = require('fs');
 const path = require('path');
 const Discord = require("discord.js");
-const Client  = new Discord.Client();
 
 /*
     Three roles containing respectively "Famous", "Veteran" and "Advanced" should be present in the server;
@@ -158,27 +157,36 @@ class Rank {
 
     loadLedger() {
         const ledgerPath = path.join("./data", `${this.guild.id}_ledger.json`);
-        const data = fs.readFileSync(ledgerPath, 'utf8')
+        
+        lockFile
+            .lock(ledgerPath)
+            .then(
+                () => {
+                    const data = fs.readFileSync(ledgerPath, 'utf8');
 
-        if (data) {
-            const ledgerObj = JSON.parse(data);
-            const entries = Object.entries(ledgerObj);
-            this.ledger = new Map(entries);
+                    if (data) {
+                        const ledgerObj = JSON.parse(data);
+                        const entries = Object.entries(ledgerObj);
+                        this.ledger = new Map(entries);
+        
+                        for (const [id, msgCount] of entries) {
+                            const user = {
+                                id: id,
+                                msgCount: msgCount
+                            }
+                            this._updateLeaderBoard(user, true);
+                        }
+        
+                        const topUser = this.leaderBoard[this.leaderBoard.length - 1];
+        
+                        this.guild.client.users.fetch(topUser.id).then((user) => {
+                            this._setActivity(user.username);
+                        });
+                    }
 
-            for (const [id, msgCount] of entries) {
-                const user = {
-                    id: id,
-                    msgCount: msgCount
+                    return lockFile.unlock(ledgerPath);
                 }
-                this._updateLeaderBoard(user, true);
-            }
-
-            const topUser = this.leaderBoard[this.leaderBoard.length - 1];
-
-            this.guild.client.users.fetch(topUser.id).then((user) => {
-                this._setActivity(user.username);
-            });
-        }
+            );
     }
 
     _sendLeaderBoardEmbed(leaderBoardRepresentation) {
@@ -269,8 +277,9 @@ class Rank {
         );
 
         if (role && leaderBoard[position]) {
-            const firstPositionUser = this.guild.members.cache.get(leaderBoard[0].id);
-            firstPositionUser.roles.add(role);
+            this.guild.members.fetch(leaderBoard[position].id).then((member) => {
+                member.roles.add(role);
+            });
         }
     }
 
@@ -280,8 +289,7 @@ class Rank {
         );
 
         role.members.forEach(user => {
-            console.log(user);
-            //user.roles.remove(role);
+            user.roles.remove(role);
         });
     }
 
@@ -302,7 +310,7 @@ class Rank {
         let hasAMonthPassed;
 
         if (this.date) {
-            hasAMonthPassed = Date.now() - this.date.then >= 60000;
+            hasAMonthPassed = Date.now() - this.date.then >= 2592000000;
         } else {
             hasAMonthPassed = true;
         }
@@ -323,7 +331,7 @@ class Rank {
         setInterval(() => {
             this._checkIfMonthHasPassed();
             this._saveDate();
-        }, 5000);
+        }, 3600000);
     }
 
     onMessage(msg) {
