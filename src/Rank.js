@@ -239,7 +239,7 @@ class Rank {
     }
 
     _saveDate() {
-        if (!this.date) {
+        if (!this.date || !this.date.then) {
             const fileName = path.join(".", "data", `${this.guild.id}_date.json`);
 
             lockFile
