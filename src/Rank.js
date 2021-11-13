@@ -308,7 +308,7 @@ class Rank {
     _checkIfMonthHasPassed() {
         // 2592000000 ms - 1 Month
         // 604800000 ms - 1 Week
-        
+
         let hasAMonthPassed;
 
         if (this.date) {
@@ -320,6 +320,7 @@ class Rank {
         if (hasAMonthPassed) {
             this._manageRoles();
             this._clearData();
+            this._saveDate();
         }
     }
 
@@ -330,9 +331,10 @@ class Rank {
             then: this._getDate()
         };
 
+        this._saveDate();
+
         setInterval(() => {
             this._checkIfMonthHasPassed();
-            this._saveDate();
         }, 3600000);
     }
 
