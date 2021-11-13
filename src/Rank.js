@@ -307,10 +307,12 @@ class Rank {
 
     _checkIfMonthHasPassed() {
         // 2592000000 ms - 1 Month
+        // 604800000 ms - 1 Week
+        
         let hasAMonthPassed;
 
         if (this.date) {
-            hasAMonthPassed = Date.now() - this.date.then >= 2592000000;
+            hasAMonthPassed = Date.now() - this.date.then >= 604800000;
         } else {
             hasAMonthPassed = true;
         }
