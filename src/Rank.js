@@ -213,7 +213,18 @@ class Rank {
         Promise.all(usersPromises).then(
             (users) => {
                 users.forEach((user, index) => {
-                    const username = user.username.padEnd(32, " ");
+                    const member = this.guild.members.cache.find(
+                        member => member.user.id === user.id 
+                    );
+
+                    let username;
+
+                    if (member && member.nickname) {
+                        username = member.nickname.padEnd(32, " ");
+                    } else {
+                        username = user.username.padEnd(32, " ");
+                    }
+
                     const msgCount = leaderBoardTopBottom[index].msgCount.toString().padEnd(6, " ");
                     const position = index + 1; 
 
