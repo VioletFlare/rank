@@ -15,10 +15,12 @@ const Discord = require("discord.js");
 
 class Rank {
 
-    constructor(guild) {
+    constructor(guild, DAL) {
         this.leaderBoard = [];
         this.guild = guild;
         this.ledger = new Map();
+        this.DAL = DAL;
+        this.leaderBoardId = 0;
         this.hasTopUserChanged = false;
         this.date = {};
     }
@@ -316,19 +318,19 @@ class Rank {
         this._assignRole(leaderBoardTopBottom, "Advanced", 2);
     }
 
-    _checkIfMonthHasPassed() {
+    _checkIfShouldReset() {
         // 2592000000 ms - 1 Month
         // 604800000 ms - 1 Week
 
-        let hasAMonthPassed;
+        let shouldReset;
 
         if (this.date) {
-            hasAMonthPassed = Date.now() - this.date.then >= 604800000;
+            shouldReset = Date.now() - this.date.then >= 604800000;
         } else {
-            hasAMonthPassed = true;
+            shouldReset = true;
         }
         
-        if (hasAMonthPassed) {
+        if (shouldReset) {
             this._manageRoles();
             this._clearData();
             this._saveDate();
@@ -345,8 +347,16 @@ class Rank {
         this._saveDate();
 
         setInterval(() => {
-            this._checkIfMonthHasPassed();
+            this._checkIfShouldReset();
         }, 3600000);
+    }
+
+    init() {
+        this.DAL.insertGuild(this.guild.id, this.guild.name);
+        this.DAL.insertChatLeaderBoard(this.guild.id);
+        this.DAL.getLeaderBoardId(this.guild.id).then(
+            leaderBoardId => this.leaderBoardId = leaderBoardId
+        );
     }
 
     onMessage(msg) {
@@ -362,6 +372,7 @@ class Rank {
                 msgCount: msgCount
             }
 
+            this.DAL.insertScore(this.leaderBoardId, msgCount, userId, this.msg.author.username);
             this._updateLeaderBoard(user);
 
             if (this.hasTopUserChanged) this._handleTopUser();
