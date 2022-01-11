@@ -90,8 +90,56 @@ class DataLayer {
         });
     }
 
-    getLeaderBoard(guildId) {
+    getScore(leaderBoardId, userId) {
+        return new Promise(
+            (resolve, reject) => {
+                DB.getConnection((err, connection) => {
+                    const getLeaderBoard =  `
+                            SELECT * FROM chatscores
+                            WHERE chatleaderboard_id = ${leaderBoardId} AND user_id = ${userId};
+                        `;
 
+                    connection.query(getLeaderBoard, (error, results, fields) => {
+                        if (error) throw error;
+                        connection.release();
+
+                        if (results === undefined) {
+                            reject(new Error("Results is undefined."))
+                        } else {
+                            resolve(results[0]);
+                        }
+                    });
+
+                });
+            }
+        );
+    }
+
+    getLeaderBoard(leaderBoardId) {
+        return new Promise(
+            (resolve, reject) => {
+                DB.getConnection((err, connection) => {
+                    const getLeaderBoard =  `
+                            SELECT * FROM chatscores
+                            WHERE chatleaderboard_id = ${leaderBoardId}
+                            ORDER BY score DESC
+                            LIMIT 10;
+                        `;
+
+                    connection.query(getLeaderBoard, (error, results, fields) => {
+                        if (error) throw error;
+                        connection.release();
+
+                        if (results === undefined) {
+                            reject(new Error("Results is undefined."))
+                        } else {
+                            resolve(results);
+                        }
+                    });
+
+                });
+            }
+        );
     }
 }
 

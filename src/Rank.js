@@ -57,23 +57,6 @@ class Rank {
         return this.ledger.get(userId);
     }
 
-    _saveLedger() {
-        const fileName = path.join(".", "data", `${this.guild.id}_ledger.json`);
-
-        lockFile
-            .lock(fileName)
-            .then(
-                () => {
-                    const ledgerObj = Object.fromEntries(this.ledger);
-                    const json = JSON.stringify(ledgerObj);
-                    fs.writeFile(fileName, json, () => { });
-
-                    return lockFile.unlock(fileName);
-                }
-            );
-
-    }
-
     _handleTopUser() {
         this._setActivity(this.msg.author.username);
         this.hasTopUserChanged = false;
@@ -157,40 +140,6 @@ class Rank {
         return this.leaderBoard[this.leaderBoard.length - 1];
     }
 
-    loadLedger() {
-        const ledgerPath = path.join("./data", `${this.guild.id}_ledger.json`);
-        
-        lockFile
-            .lock(ledgerPath)
-            .then(
-                () => {
-                    const data = fs.readFileSync(ledgerPath, 'utf8');
-
-                    if (data) {
-                        const ledgerObj = JSON.parse(data);
-                        const entries = Object.entries(ledgerObj);
-                        this.ledger = new Map(entries);
-        
-                        for (const [id, msgCount] of entries) {
-                            const user = {
-                                id: id,
-                                msgCount: msgCount
-                            }
-                            this._updateLeaderBoard(user, true);
-                        }
-        
-                        const topUser = this.leaderBoard[this.leaderBoard.length - 1];
-        
-                        this.guild.client.users.fetch(topUser.id).then((user) => {
-                            this._setActivity(user.username);
-                        });
-                    }
-
-                    return lockFile.unlock(ledgerPath);
-                }
-            );
-    }
-
     _sendLeaderBoardEmbed(leaderBoardRepresentation) {
         const embed = new Discord.MessageEmbed()
             .setColor('#DAA520')
@@ -204,39 +153,39 @@ class Rank {
 
 
     _printLeaderBoard() {
-        const leaderBoardTopBottom = this.leaderBoard.slice().reverse();
-        let leaderBoardRepresentation = "";
-        let usersPromises = [];
+        this.DAL.getLeaderBoard(this.leaderBoardId).then((leaderboard) => {
+            let leaderBoardRepresentation = "";
+            let usersPromises = [];
 
-        leaderBoardTopBottom.forEach((record) => {
-            usersPromises.push(this.guild.client.users.fetch(record.id));
-        })
+            leaderboard.forEach((record) => {
+                usersPromises.push(this.guild.client.users.fetch(record.user_id));
+            })
 
-        Promise.all(usersPromises).then(
-            (users) => {
-                users.forEach((user, index) => {
-                    const member = this.guild.members.cache.find(
-                        member => member.user.id === user.id 
-                    );
+            Promise.all(usersPromises).then(
+                (users) => {
+                    users.forEach((user, index) => {
+                        const member = this.guild.members.cache.find(
+                            member => member.user.id === user.id 
+                        );
 
-                    let username;
+                        let username;
 
-                    if (member && member.nickname) {
-                        username = member.nickname.padEnd(32, " ");
-                    } else {
-                        username = user.username.padEnd(32, " ");
-                    }
+                        if (member && member.nickname) {
+                            username = member.nickname.padEnd(32, " ");
+                        } else {
+                            username = user.username.padEnd(32, " ");
+                        }
 
-                    const msgCount = leaderBoardTopBottom[index].msgCount.toString().padEnd(6, " ");
-                    const position = index + 1; 
+                        const msgCount = leaderboard[index].score.toString().padEnd(6, " ");
+                        const position = index + 1; 
 
-                    leaderBoardRepresentation += `\`${position}. ${username} ⭐ ${msgCount}\`\n`;
-                })
+                        leaderBoardRepresentation += `\`${position}. ${username} ⭐ ${msgCount}\`\n`;
+                    })
 
-                this._sendLeaderBoardEmbed(leaderBoardRepresentation);
-            }
-        );
-
+                    this._sendLeaderBoardEmbed(leaderBoardRepresentation);
+                }
+            );
+        });
     }
 
     _getDate() {
@@ -364,24 +313,20 @@ class Rank {
 
         if (!this.msg.author.bot) {
             const userId = this.msg.author.id;
-            this._updateLedger(userId);
-            const msgCount = this._getUserMessageCount(userId);
 
-            const user = {
-                id: userId,
-                msgCount: msgCount
-            }
+            this.DAL.getScore(this.leaderBoardId, userId).then((score) => {
+                let newScore;
 
-            this.DAL.insertScore(this.leaderBoardId, msgCount, userId, this.msg.author.username);
-            this._updateLeaderBoard(user);
+                if (score) {
+                    newScore = score.score + 1;
+                } else {
+                    newScore = 1;
+                }
+                
+                this.DAL.insertScore(this.leaderBoardId, newScore, userId, this.msg.author.username);
+            });
 
-            if (this.hasTopUserChanged) this._handleTopUser();
-
-            const _dbSaveLedger = this._debounce(
-                () => this._saveLedger()
-            );
-
-            _dbSaveLedger();
+            //if (this.hasTopUserChanged) this._handleTopUser();
         }
 
         if (this.msg.content === "r/leaderboard") {
