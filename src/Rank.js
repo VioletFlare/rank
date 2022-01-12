@@ -20,15 +20,27 @@ class Rank {
         this.guild = guild;
         this.ledger = new Map();
         this.DAL = DAL;
-        this.leaderBoardId = 0;
-        this.hasTopUserChanged = false;
+        this.leaderBoardData = {};
+        this.topUser = {};
         this.date = {};
     }
 
-    _setActivity(username) {
-        this.guild.client.user.setActivity(
-            `🏆 ${username}`, { type: 'PLAYING' }
+    _setActivity(userId) {
+        const member = this.guild.members.cache.find(
+            member => member.user.id === userId
         );
+
+        if (member && member.nickname) {
+            this.guild.client.user.setActivity(
+                `🏆 ${member.nickname}`, { type: 'PLAYING' }
+            );
+        } else {
+            this.guild.client.users.fetch(userId).then(user => {
+                this.guild.client.user.setActivity(
+                    `🏆 ${user.username}`, { type: 'PLAYING' }
+                );
+            });
+        }
     }
 
     _debounce(func, timeout = 10000) {
@@ -39,105 +51,6 @@ class Rank {
                 () => { func.apply(this, args); }, timeout
             );
         };
-    }
-
-    _updateLedger(userId) {
-        const userExists = this.ledger.get(userId);
-
-        if (userExists) {
-            this.ledger.set(
-                userId, this.ledger.get(userId) + 1
-            );
-        } else {
-            this.ledger.set(userId, 1);
-        }
-    }
-
-    _getUserMessageCount(userId) {
-        return this.ledger.get(userId);
-    }
-
-    _handleTopUser() {
-        this._setActivity(this.msg.author.username);
-        this.hasTopUserChanged = false;
-    }
-
-    _removeDuplicate(user) {
-        for (let i = 0; i < this.leaderBoard.length; i++) {
-            if (this.leaderBoard[i].id === user.id) {
-                this.leaderBoard.splice(i, 1);
-            }
-        }
-    }
-
-    _switchTopUser(user) {
-        this._removeDuplicate(user);
-        this.leaderBoard.push(user);
-    }
-
-    _updateUserMsgCount(user) {
-        for (let i = 0; i < this.leaderBoard.length; i++) {
-            if (this.leaderBoard[i].id === user.id) {
-                this.leaderBoard[i].msgCount = user.msgCount;
-            }
-        }
-    }
-
-    _removeExcessiveLeaderBoardEntry() {
-        if (this.leaderBoard.length > 10) {
-            this.leaderBoard.splice(0, 1);
-        }
-    }
-
-    _appendAtProperIndex(user) {
-        const leaderBoard = this.leaderBoard.filter(
-            record => record.id !== user.id
-        );
-
-        for (let i = 0; i < leaderBoard.length; i++) {
-            const shouldAddUser = 
-                leaderBoard[i].msgCount > user.msgCount
-    
-            if (shouldAddUser) {
-
-                const firstPart = leaderBoard.slice(0, i);
-                const secondPart = leaderBoard.slice(i);
-                firstPart.push(user);
-                this.leaderBoard = firstPart.concat(secondPart);
-                    
-                break;
-            };
-        }
-    }
-
-    _updateLeaderBoard(user, isLoading) {
-        if (this.leaderBoard.length === 0) {
-            this.leaderBoard.push(user);
-            this.hasTopUserChanged = !isLoading;
-
-            console.log(`${user.id} added to leaderboard.`);
-            return;
-        }
-
-        const topUser = this.leaderBoard[this.leaderBoard.length - 1];
-        const hasMoreMessagesThanTopUser = user.msgCount > topUser.msgCount;
-        const isNotTopUser = topUser.id != user.id;
-
-        if (hasMoreMessagesThanTopUser && isNotTopUser) {
-            this._switchTopUser(user);
-            this.hasTopUserChanged = !isLoading;
-        } else {
-            this._appendAtProperIndex(user);
-            this._updateUserMsgCount(user);
-
-            console.log(`${user.id} added to leaderboard.`);
-        }
-
-        this._removeExcessiveLeaderBoardEntry();
-    }
-
-    _getTopUser() {
-        return this.leaderBoard[this.leaderBoard.length - 1];
     }
 
     _sendLeaderBoardEmbed(leaderBoardRepresentation) {
@@ -153,7 +66,7 @@ class Rank {
 
 
     _printLeaderBoard() {
-        this.DAL.getLeaderBoard(this.leaderBoardId).then((leaderboard) => {
+        this.DAL.getLeaderBoard(this.leaderBoardData.id).then((leaderboard) => {
             let leaderBoardRepresentation = "";
             let usersPromises = [];
 
@@ -303,9 +216,16 @@ class Rank {
     init() {
         this.DAL.insertGuild(this.guild.id, this.guild.name);
         this.DAL.insertChatLeaderBoard(this.guild.id);
-        this.DAL.getLeaderBoardId(this.guild.id).then(
-            leaderBoardId => this.leaderBoardId = leaderBoardId
+        this.DAL.getLeaderBoardData(this.guild.id).then(
+            leaderBoardData => {
+                this.leaderBoardData = leaderBoardData;
+
+                this.DAL.getTopUser(this.leaderBoardData.id).then(
+                    topUser => this.topUser = topUser
+                );
+            } 
         );
+
     }
 
     onMessage(msg) {
@@ -314,7 +234,7 @@ class Rank {
         if (!this.msg.author.bot) {
             const userId = this.msg.author.id;
 
-            this.DAL.getScore(this.leaderBoardId, userId).then((score) => {
+            this.DAL.getScore(this.leaderBoardData.id, userId).then((score) => {
                 let newScore;
 
                 if (score) {
@@ -323,10 +243,18 @@ class Rank {
                     newScore = 1;
                 }
                 
-                this.DAL.insertScore(this.leaderBoardId, newScore, userId, this.msg.author.username);
+                this.DAL.insertScore(this.leaderBoardData.id, newScore, userId, this.msg.author.username);
             });
 
-            //if (this.hasTopUserChanged) this._handleTopUser();
+            this.DAL.getTopUser(this.leaderBoardData.id).then(topUser => {
+                const hasTopUserChanged = this.topUser && this.topUser.user_id != topUser.user_id;
+
+                if (hasTopUserChanged) {
+                    this.topUser.user_id = topUser.user_id;
+
+                    this._setActivity(topUser.user_id); 
+                }
+            })
         }
 
         if (this.msg.content === "r/leaderboard") {

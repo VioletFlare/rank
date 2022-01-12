@@ -44,14 +44,14 @@ class DataLayer {
         });
     }
 
-    getLeaderBoardId(guildId) {
+    getLeaderBoardData(guildId) {
         return new Promise(
             (resolve, reject) => {
                 DB.getConnection((err, connection) => {
                     if (err) throw err;
         
                     const getLeaderBoardId = `
-                        SELECT id from chatleaderboards
+                        SELECT * from chatleaderboards
                         WHERE guild_id = ${guildId};
                     `
         
@@ -62,7 +62,7 @@ class DataLayer {
                         if (results === undefined) {
                             reject(new Error("Results is undefined."))
                         } else {
-                            resolve(results[0].id);
+                            resolve(results[0]);
                         }
                     });
                 });
@@ -134,6 +134,33 @@ class DataLayer {
                             reject(new Error("Results is undefined."))
                         } else {
                             resolve(results);
+                        }
+                    });
+
+                });
+            }
+        );
+    }
+
+    getTopUser(leaderBoardId) {
+        return new Promise(
+            (resolve, reject) => {
+                DB.getConnection((err, connection) => {
+                    const getLeaderBoard =  `
+                            SELECT * FROM chatscores
+                            WHERE chatleaderboard_id = ${leaderBoardId}
+                            ORDER BY score DESC
+                            LIMIT 1;
+                        `;
+
+                    connection.query(getLeaderBoard, (error, results, fields) => {
+                        if (error) throw error;
+                        connection.release();
+
+                        if (results === undefined) {
+                            reject(new Error("Results is undefined."))
+                        } else {
+                            resolve(results[0]);
                         }
                     });
 
