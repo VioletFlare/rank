@@ -64,39 +64,41 @@ class Rank {
         this.msg.reply(embed);
     }
 
+    _prepareLeaderboard(users, leaderboard) {
+        let leaderBoardRepresentation = "";
+
+        users.forEach((user, index) => {
+            const member = this.guild.members.cache.find(
+                member => member.user.id === user.id 
+            );
+
+            let username;
+
+            if (member && member.nickname) {
+                username = member.nickname.padEnd(32, " ");
+            } else {
+                username = user.username.padEnd(32, " ");
+            }
+
+            const msgCount = leaderboard[index].score.toString().padEnd(6, " ");
+            const position = index + 1; 
+
+            leaderBoardRepresentation += `\`${position}. ${username} ⭐ ${msgCount}\`\n`;
+        })
+
+        this._sendLeaderBoardEmbed(leaderBoardRepresentation);
+    }
 
     _printLeaderBoard() {
-        this.DAL.getLeaderBoard(this.leaderBoardData.id).then((leaderboard) => {
-            let leaderBoardRepresentation = "";
+        this.DAL.getLeaderBoard(this.leaderBoardData.id).then(leaderboard => {
             let usersPromises = [];
 
-            leaderboard.forEach((record) => {
+            leaderboard.forEach(record => {
                 usersPromises.push(this.guild.client.users.fetch(record.user_id));
             })
 
             Promise.all(usersPromises).then(
-                (users) => {
-                    users.forEach((user, index) => {
-                        const member = this.guild.members.cache.find(
-                            member => member.user.id === user.id 
-                        );
-
-                        let username;
-
-                        if (member && member.nickname) {
-                            username = member.nickname.padEnd(32, " ");
-                        } else {
-                            username = user.username.padEnd(32, " ");
-                        }
-
-                        const msgCount = leaderboard[index].score.toString().padEnd(6, " ");
-                        const position = index + 1; 
-
-                        leaderBoardRepresentation += `\`${position}. ${username} ⭐ ${msgCount}\`\n`;
-                    })
-
-                    this._sendLeaderBoardEmbed(leaderBoardRepresentation);
-                }
+                users => this._prepareLeaderboard(users, leaderboard)
             );
         });
     }
@@ -221,11 +223,13 @@ class Rank {
                 this.leaderBoardData = leaderBoardData;
 
                 this.DAL.getTopUser(this.leaderBoardData.id).then(
-                    topUser => this.topUser = topUser
+                    topUser => {
+                        this.topUser = topUser;
+                        this._setActivity(this.topUser.user_id);
+                    } 
                 );
             } 
         );
-
     }
 
     onMessage(msg) {
