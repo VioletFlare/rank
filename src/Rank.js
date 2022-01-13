@@ -16,13 +16,10 @@ const Discord = require("discord.js");
 class Rank {
 
     constructor(guild, DAL) {
-        this.leaderBoard = [];
         this.guild = guild;
-        this.ledger = new Map();
         this.DAL = DAL;
         this.leaderBoardData = {};
         this.topUser = {};
-        this.date = {};
     }
 
     _setActivity(userId) {
@@ -103,49 +100,8 @@ class Rank {
         });
     }
 
-    _getDate() {
-        const fileName = path.join(".", "data", `${this.guild.id}_date.json`);
-        const data = fs.readFileSync(fileName, 'utf8');
-        let config = null;
-
-        if (data) {
-            config = JSON.parse(data);
-        } 
-
-        return config;
-    }
-
-    _saveDate() {
-        if (!this.date || !this.date.then) {
-            const fileName = path.join(".", "data", `${this.guild.id}_date.json`);
-
-            lockFile
-                .lock(fileName)
-                .then(
-                    () => {
-                        this.date = {
-                            then: Date.now()
-                        }
-                        const json = JSON.stringify(this.date.then);
-                        
-                        fs.writeFile(fileName, json, () => { });
-    
-                        return lockFile.unlock(fileName);
-                    }
-                );
-        }
-    }
-
     _clearData() {
-        const ledgerPath = path.join("./data", `${this.guild.id}_ledger.json`)
-        const dateFileName = path.join(".", "data", `${this.guild.id}_date.json`);
 
-        this.date = null;
-        this.leaderBoard = [];
-        this.ledger = new Map()
-
-        fs.writeFile(ledgerPath, "", () => { });
-        fs.writeFile(dateFileName, "", () => { });
     }
 
     _assignRole(leaderBoard, roleName, position) {
@@ -154,7 +110,7 @@ class Rank {
         );
 
         if (role && leaderBoard[position]) {
-            this.guild.members.fetch(leaderBoard[position].id).then((member) => {
+            this.guild.members.fetch(leaderBoard[position].user_id).then((member) => {
                 member.roles.add(role);
             });
         }
@@ -165,54 +121,49 @@ class Rank {
             role => role.name.includes(roleName)
         );
 
+        //problem: doesn't fetch users that aren't inside the cache
         role.members.forEach(user => {
             user.roles.remove(role);
         });
     }
 
     _manageRoles() {
-        const leaderBoardTopBottom = this.leaderBoard.slice().reverse();
-
         this._clearRole("Famous");
         this._clearRole("Veteran");
         this._clearRole("Advanced");
 
-        this._assignRole(leaderBoardTopBottom, "Famous", 0);
-        this._assignRole(leaderBoardTopBottom, "Veteran", 1);
-        this._assignRole(leaderBoardTopBottom, "Advanced", 2);
+        /*
+        this.DAL.getFirstThreePositions(this.leaderBoardData.id).then(leaderboard => {
+            this._assignRole(leaderboard, "Famous", 0);
+            this._assignRole(leaderboard, "Veteran", 1);
+            this._assignRole(leaderboard, "Advanced", 2);
+        });
+        */
+    }
+
+    _saveDate() {
+
     }
 
     _checkIfShouldReset() {
         // 2592000000 ms - 1 Month
         // 604800000 ms - 1 Week
-
-        let shouldReset;
-
-        if (this.date) {
-            shouldReset = Date.now() - this.date.then >= 604800000;
-        } else {
-            shouldReset = true;
-        }
+        const shouldReset = Date.now() - this.leaderBoardData.last_reset_ts >= this.leaderBoardData.next_reset_time_offset;
         
-        if (shouldReset) {
+        if (true) {
             this._manageRoles();
             this._clearData();
             this._saveDate();
         }
     }
 
-    loadDate() {
+    _watchForResetTime() {
         //3600000 ms - 1 Hour
-
-        this.date = {
-            then: this._getDate()
-        };
-
-        this._saveDate();
+        //600000 ms - 10 minutes
 
         setInterval(() => {
             this._checkIfShouldReset();
-        }, 3600000);
+        }, 5000);
     }
 
     init() {
@@ -228,6 +179,8 @@ class Rank {
                         this._setActivity(this.topUser.user_id);
                     } 
                 );
+
+                this._watchForResetTime();
             } 
         );
     }

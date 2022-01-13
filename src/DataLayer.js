@@ -168,6 +168,33 @@ class DataLayer {
             }
         );
     }
+
+    getFirstThreePositions(leaderBoardId) {
+        return new Promise(
+            (resolve, reject) => {
+                DB.getConnection((err, connection) => {
+                    const getLeaderBoard =  `
+                            SELECT * FROM chatscores
+                            WHERE chatleaderboard_id = ${leaderBoardId}
+                            ORDER BY score DESC
+                            LIMIT 3;
+                        `;
+
+                    connection.query(getLeaderBoard, (error, results, fields) => {
+                        if (error) throw error;
+                        connection.release();
+
+                        if (results === undefined) {
+                            reject(new Error("Results is undefined."))
+                        } else {
+                            resolve(results);
+                        }
+                    });
+
+                });
+            }
+        );
+    }
 }
 
 module.exports = new DataLayer();
