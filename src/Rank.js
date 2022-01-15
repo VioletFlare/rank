@@ -1,6 +1,3 @@
-const lockFile = require('proper-lockfile');
-const fs = require('fs');
-const path = require('path');
 const Discord = require("discord.js");
 
 /*
@@ -56,9 +53,11 @@ class Rank {
             .setTitle("👑 Leader Board                 ")
             .setDescription(leaderBoardRepresentation)
             .setThumbnail('https://i.imgur.com/v5RR3ro.png')
-            .setFooter("⭐ Number of messages committed.")
+            .setFooter({ text: "⭐ Number of messages committed.", iconURL: "" })
     
-        this.msg.reply(embed);
+        this.msg.reply({ 
+            embeds: [embed] 
+        });
     }
 
     _prepareLeaderboard(users, leaderboard) {
@@ -121,7 +120,6 @@ class Rank {
             role => role.name.includes(roleName)
         );
 
-        //problem: doesn't fetch users that aren't inside the cache
         role.members.forEach(user => {
             user.roles.remove(role);
         });

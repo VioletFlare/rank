@@ -11,8 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^12.5.3",
-    "mysql2": "^2.3.3",
-    "proper-lockfile": "^4.1.2"
+    "discord.js": "^13.6.0",
+    "mysql2": "^2.3.3"
   }
 }

@@ -7,7 +7,11 @@ class InstanceManager {
     
     constructor() {
         this.isDev = process.argv.includes("--dev");
-        this.client = new Discord.Client();
+        this.client = new Discord.Client({ 
+            partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
+            intents: ['DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILDS', 'GUILD_MEMBERS']
+        });
+
         this.sessions = new Map();
     }
 
@@ -42,7 +46,7 @@ class InstanceManager {
         });
           
         this.client.on(
-            "message", msg => this._onMessage(msg)
+            "messageCreate", msg => this._onMessage(msg)
         );
 
         this.client.on(
