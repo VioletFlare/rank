@@ -35,7 +35,9 @@ class InstanceManager {
     }
 
     _initSession(guild) {
-        this.sessions.set(guild.id, new Rank(guild));
+        const rank = new Rank(guild, DAL);
+        rank.init();
+        this.sessions.set(guild.id, new rank);
     }
 
     _setEvents() {

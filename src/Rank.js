@@ -48,12 +48,20 @@ class Rank {
     }
 
     _sendLeaderBoardEmbed(leaderBoardRepresentation) {
+        if (!leaderBoardRepresentation) {
+            leaderBoardRepresentation = "The board just resetted. Try again later!"
+        }
+
+        const footer = `
+⭐ Number of messages committed.
+🏆 Next Awards: ${new Date(this.leaderBoardData.last_reset_ts + this.leaderBoardData.next_reset_time_offset)}
+        `
         const embed = new Discord.MessageEmbed()
             .setColor('#DAA520')
             .setTitle("👑 Leader Board                 ")
             .setDescription(leaderBoardRepresentation)
             .setThumbnail('https://i.imgur.com/v5RR3ro.png')
-            .setFooter({ text: "⭐ Number of messages committed.", iconURL: "" })
+            .setFooter({ text: footer, iconURL: "" })
     
         this.msg.reply({ 
             embeds: [embed] 
@@ -99,16 +107,14 @@ class Rank {
         });
     }
 
-    _clearData() {
-
-    }
-
     _assignRole(leaderBoard, roleName, position) {
         const role = this.guild.roles.cache.find(
             role => role.name.includes(roleName)
         );
 
-        if (role && leaderBoard[position]) {
+        const shouldAssignRole = role && leaderBoard[position] && leaderBoard[position].score != 0;
+
+        if (shouldAssignRole) {
             this.guild.members.fetch(leaderBoard[position].user_id).then((member) => {
                 member.roles.add(role);
             });
@@ -125,43 +131,46 @@ class Rank {
         });
     }
 
-    _manageRoles() {
+    _handleReset() {
         this._clearRole("Famous");
         this._clearRole("Veteran");
         this._clearRole("Advanced");
 
-        /*
         this.DAL.getFirstThreePositions(this.leaderBoardData.id).then(leaderboard => {
             this._assignRole(leaderboard, "Famous", 0);
             this._assignRole(leaderboard, "Veteran", 1);
             this._assignRole(leaderboard, "Advanced", 2);
+
+            this.DAL.resetLeaderBoard(this.leaderBoardData.id).then(result => {
+                //updating leaderboard with fresh data
+                this.leaderBoardData = result[0];
+            })
         });
-        */
     }
 
-    _saveDate() {
-
+    _updateLeaderBoardData() {
+        this.DAL.getLeaderBoardData(this.guild.id).then(
+            leaderBoardData => {
+                this.leaderBoardData = leaderBoardData;
+            } 
+        );
     }
 
-    _checkIfShouldReset() {
-        // 2592000000 ms - 1 Month
-        // 604800000 ms - 1 Week
-        const shouldReset = Date.now() - this.leaderBoardData.last_reset_ts >= this.leaderBoardData.next_reset_time_offset;
-        
-        if (true) {
-            this._manageRoles();
-            this._clearData();
-            this._saveDate();
-        }
-    }
-
-    _watchForResetTime() {
+    _startWatcher() {
         //3600000 ms - 1 Hour
         //600000 ms - 10 minutes
 
         setInterval(() => {
-            this._checkIfShouldReset();
-        }, 5000);
+            // 2592000000 ms - 1 Month
+            // 604800000 ms - 1 Week
+            const shouldReset = Date.now() - this.leaderBoardData.last_reset_ts >= this.leaderBoardData.next_reset_time_offset;
+            
+            if (shouldReset) {
+                this._handleReset();
+            } else {
+                this._updateLeaderBoardData();
+            }
+        }, 600000);
     }
 
     init() {
@@ -178,7 +187,7 @@ class Rank {
                     } 
                 );
 
-                this._watchForResetTime();
+                this._startWatcher();
             } 
         );
     }
@@ -214,6 +223,8 @@ class Rank {
 
         if (this.msg.content === "r/leaderboard") {
             this._printLeaderBoard();
+        } else if (this.msg.content === "r/help") {
+            console.log("boink");
         }
     }
 }

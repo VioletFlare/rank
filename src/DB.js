@@ -2,12 +2,16 @@ const mysql = require('mysql2');
 const config = require('../config.js');
 const isDev = process.argv.includes("--dev");
 
-let pool;
+let poolConfig;
 
 if (isDev) {
-    pool = mysql.createPool(config.DB_CONFIG_DEV);
+    poolConfig = config.DB_CONFIG_DEV;
 } else {
-    pool = mysql.createPool(config.DB_CONFIG_PROD);
+    poolConfig = config.DB_CONFIG_PROD;
 }
+
+poolConfig.multipleStatements = true;
+
+const pool = mysql.createPool(poolConfig);
 
 module.exports = pool;
