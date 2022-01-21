@@ -1,14 +1,17 @@
 const Rank = require('./Rank.js');
 const config = require('../config.js');
 const Discord = require("discord.js");
-const fs = require('fs');
-const path = require('path');
+const DAL = require("./DataLayer.js");
 
 class InstanceManager {
     
     constructor() {
         this.isDev = process.argv.includes("--dev");
-        this.client = new Discord.Client();
+        this.client = new Discord.Client({ 
+            partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
+            intents: ['DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILDS', 'GUILD_MEMBERS']
+        });
+
         this.sessions = new Map();
     }
 
@@ -24,54 +27,33 @@ class InstanceManager {
     _initSessions() {
         if (!this.sessions.size) {
             for (const [guildId, guild] of this.client.guilds.cache.entries()) {
-                const rank = new Rank(guild);
-                rank.loadLedger();
-                rank.loadDate();
+                const rank = new Rank(guild, DAL);
+                rank.init();
                 this.sessions.set(guildId, rank);
             }
         }
     }
 
-    _createDataFiles() {
-        const guildIds = this.client.guilds.cache.map(guild => guild.id);
-
-        guildIds.forEach(guildId => {
-            const ledgerPath = path.join("./data", `${guildId}_ledger.json`);
-            const timePath = path.join("./data", `${guildId}_date.json`);
-
-            fs.open(ledgerPath, 'a', () => {});
-            fs.open(timePath, 'a', () => {});
-        })
-    }
-
     _initSession(guild) {
-        this.sessions.set(guild.id, new Rank(guild));
+        const rank = new Rank(guild, DAL);
+        rank.init();
+        this.sessions.set(guild.id, new rank);
     }
 
     _setEvents() {
         this.client.on("ready", () => {
             console.log(`Logged in as ${this.client.user.tag}, id ${this.client.user.id}!`);
             
-            this._createDataDir();
-            this._createDataFiles();
             this._initSessions();
         });
           
         this.client.on(
-            "message", msg => this._onMessage(msg)
+            "messageCreate", msg => this._onMessage(msg)
         );
 
         this.client.on(
             "guildCreate", guild => this._initSession(guild)
         );
-    }
-
-    _createDataDir() {        
-        const dir = './data';
-
-        if (!fs.existsSync(dir)){
-            fs.mkdirSync(dir);
-        }
     }
 
     init() {
