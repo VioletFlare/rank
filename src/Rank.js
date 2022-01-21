@@ -182,8 +182,10 @@ class Rank {
 
                 this.DAL.getTopUser(this.leaderBoardData.id).then(
                     topUser => {
-                        this.topUser = topUser;
-                        this._setActivity(this.topUser.user_id);
+                        if (topUser) {
+                            this.topUser = topUser;
+                            this._setActivity(this.topUser.user_id);
+                        }   
                     } 
                 );
 
@@ -211,7 +213,7 @@ class Rank {
             });
 
             this.DAL.getTopUser(this.leaderBoardData.id).then(topUser => {
-                const hasTopUserChanged = this.topUser && this.topUser.user_id != topUser.user_id;
+                const hasTopUserChanged = this.topUser && topUser && this.topUser.user_id != topUser.user_id;
 
                 if (hasTopUserChanged) {
                     this.topUser.user_id = topUser.user_id;

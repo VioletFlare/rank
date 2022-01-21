@@ -7,10 +7,10 @@ class DataLayer {
         DB.getConnection((err, connection) => {
             if (err) throw err;
 
-            const escapedName = mysql.escape(name);
+            const escapedName =  mysql.escape(name);
 
             const query = `
-                INSERT INTO guilds
+                INSERT INTO rank_guilds
                     (id, name)
                 VALUES
                     (${guildId}, ${escapedName})
@@ -30,7 +30,7 @@ class DataLayer {
             if (err) throw err;
 
             const query = `
-                INSERT IGNORE INTO chatleaderboards
+                INSERT IGNORE INTO rank_chatleaderboards
                 SET guild_id = ${guildId},
                 last_reset_ts = ${Date.now()},
                 next_reset_time_offset = ${604800000},
@@ -51,7 +51,7 @@ class DataLayer {
                     if (err) throw err;
         
                     const getLeaderBoardId = `
-                        SELECT * from chatleaderboards
+                        SELECT * from rank_chatleaderboards
                         WHERE guild_id = ${guildId};
                     `
         
@@ -73,7 +73,7 @@ class DataLayer {
     updateResetTime(leaderBoardId) {
         DB.getConnection((err, connection) => {
             const updateResetTime = `
-                UPDATE chatleaderboards
+                UPDATE rank_chatleaderboards
                 SET last_reset_ts = ${Date.now()}
                 WHERE id = ${leaderBoardId}
             `;
@@ -88,7 +88,7 @@ class DataLayer {
     clearScores(leaderBoardId) {
         DB.getConnection((err, connection) => {
             const clearScores = `
-                UPDATE chatscores
+                UPDATE rank_chatscores
                 SET score = 0
                 WHERE chatleaderboard_id = ${leaderBoardId}
             `;
@@ -105,15 +105,15 @@ class DataLayer {
             (resolve, reject) => {
                 DB.getConnection((err, connection) => {
                     const resetLeaderBoard =  `
-                        UPDATE chatleaderboards
+                        UPDATE rank_chatleaderboards
                         SET last_reset_ts = ${Date.now()}
                         WHERE id = ${leaderBoardId};
 
-                        UPDATE chatscores
+                        UPDATE rank_chatscores
                         SET score = 0
                         WHERE chatleaderboard_id = ${leaderBoardId};
 
-                        SELECT * FROM chatleaderboards
+                        SELECT * FROM rank_chatleaderboards
                         WHERE id = ${leaderBoardId};
                     `;
 
@@ -135,10 +135,10 @@ class DataLayer {
 
     insertScore(leaderBoardId, score, userId, username) {
         DB.getConnection((err, connection) => {
-            const escapedUsername = mysql.escape(username);
+            const escapedUsername =  mysql.escape(username);
 
             const insertScore = `
-                INSERT INTO chatscores
+                INSERT INTO rank_chatscores
                     (username, score, chatleaderboard_id, user_id)
                 VALUES
                     (${escapedUsername}, ${score}, ${leaderBoardId}, ${userId})
@@ -158,7 +158,7 @@ class DataLayer {
             (resolve, reject) => {
                 DB.getConnection((err, connection) => {
                     const getScore =  `
-                            SELECT * FROM chatscores
+                            SELECT * FROM rank_chatscores
                             WHERE chatleaderboard_id = ${leaderBoardId} AND user_id = ${userId};
                         `;
 
@@ -183,7 +183,7 @@ class DataLayer {
             (resolve, reject) => {
                 DB.getConnection((err, connection) => {
                     const getLeaderBoard =  `
-                            SELECT * FROM chatscores
+                            SELECT * FROM rank_chatscores
                             WHERE chatleaderboard_id = ${leaderBoardId} AND score != 0
                             ORDER BY score DESC
                             LIMIT 10;
@@ -210,7 +210,7 @@ class DataLayer {
             (resolve, reject) => {
                 DB.getConnection((err, connection) => {
                     const getLeaderBoard =  `
-                            SELECT * FROM chatscores
+                            SELECT * FROM rank_chatscores
                             WHERE chatleaderboard_id = ${leaderBoardId}
                             ORDER BY score DESC
                             LIMIT 1;
@@ -237,7 +237,7 @@ class DataLayer {
             (resolve, reject) => {
                 DB.getConnection((err, connection) => {
                     const getLeaderBoard =  `
-                            SELECT * FROM chatscores
+                            SELECT * FROM rank_chatscores
                             WHERE chatleaderboard_id = ${leaderBoardId}
                             ORDER BY score DESC
                             LIMIT 3;
