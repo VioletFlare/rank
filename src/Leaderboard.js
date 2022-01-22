@@ -79,15 +79,16 @@ class Leaderboard {
             let username;
 
             if (member && member.nickname) {
-                username = member.nickname.padEnd(32, " ");
+                username = member.nickname;
             } else {
-                username = user.username.padEnd(32, " ");
+                username = user.username;
             }
 
-            const msgCount = leaderboard[index].score.toString().padEnd(6, " ");
             const position = index + 1; 
-
-            leaderBoardRepresentation += `\`${position}. ${username} ⭐ ${msgCount}\`\n`;
+            const positionUsername = `${position}. ${username}`.padEnd(32, " ");
+            const msgCount = leaderboard[index].score.toString().padEnd(6, " ");
+            
+            leaderBoardRepresentation += `\`${positionUsername} ⭐ ${msgCount}\`\n`;
         })
 
         this._sendLeaderBoardEmbed(leaderBoardRepresentation);
