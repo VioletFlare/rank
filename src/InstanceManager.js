@@ -24,6 +24,10 @@ class InstanceManager {
         }
     }
 
+    _onMessageReactionAdd(reaction, user) {
+        console.log(reaction, user);
+    }
+
     _initSessions() {
         if (!this.sessions.size) {
             for (const [guildId, guild] of this.client.guilds.cache.entries()) {
@@ -37,7 +41,7 @@ class InstanceManager {
     _initSession(guild) {
         const rank = new Rank(guild, DAL);
         rank.init();
-        this.sessions.set(guild.id, new rank);
+        this.sessions.set(guild.id, rank);
     }
 
     _setEvents() {
@@ -50,6 +54,10 @@ class InstanceManager {
         this.client.on(
             "messageCreate", msg => this._onMessageCreate(msg)
         );
+
+        this.client.on(
+            "messageReactionAdd", (reaction, user) => this._onMessageReactionAdd(reaction, user)
+        )
 
         this.client.on(
             "guildCreate", guild => this._initSession(guild)

@@ -14,6 +14,8 @@ class Rank {
 
         if (msg.content === "r/leaderboard") {
             this.Leaderboard.printLeaderBoard();
+        } else if (msg.content === "r/leastactive") {
+            
         } else if (msg.content === "r/help") {
             console.log("boink");
         }
