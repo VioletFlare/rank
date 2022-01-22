@@ -1,7 +1,7 @@
 const Rank = require('./Rank.js');
 const config = require('../config.js');
 const Discord = require("discord.js");
-const DAL = require("./DataLayer.js");
+const DAL = require("./DAL/DataLayer.js");
 
 class InstanceManager {
     
@@ -15,12 +15,12 @@ class InstanceManager {
         this.sessions = new Map();
     }
 
-    _onMessage(msg) {
+    _onMessageCreate(msg) {
         const guildId = msg.guild.id;
         const rank = this.sessions.get(guildId);
         
         if (rank) {
-            rank.onMessage(msg)
+            rank.onMessageCreate(msg)
         }
     }
 
@@ -48,7 +48,7 @@ class InstanceManager {
         });
           
         this.client.on(
-            "messageCreate", msg => this._onMessage(msg)
+            "messageCreate", msg => this._onMessageCreate(msg)
         );
 
         this.client.on(

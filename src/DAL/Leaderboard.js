@@ -1,10 +1,13 @@
-const DB = require('./DB.js');
 const mysql = require('mysql2');
 
-class DataLayer {
+class Leaderboard {
+
+    constructor(DB) {
+        this.DB = DB;
+    }
 
     insertGuild(guildId, name) {
-        DB.getConnection((err, connection) => {
+        this.DB.getConnection((err, connection) => {
             if (err) throw err;
 
             const escapedName =  mysql.escape(name);
@@ -26,7 +29,7 @@ class DataLayer {
     }
 
     insertChatLeaderBoard(guildId) {
-        DB.getConnection((err, connection) => {
+        this.DB.getConnection((err, connection) => {
             if (err) throw err;
 
             const query = `
@@ -47,7 +50,7 @@ class DataLayer {
     getLeaderBoardData(guildId) {
         return new Promise(
             (resolve, reject) => {
-                DB.getConnection((err, connection) => {
+                this.DB.getConnection((err, connection) => {
                     if (err) throw err;
         
                     const getLeaderBoardId = `
@@ -71,7 +74,7 @@ class DataLayer {
     }
 
     updateResetTime(leaderBoardId) {
-        DB.getConnection((err, connection) => {
+        this.DB.getConnection((err, connection) => {
             const updateResetTime = `
                 UPDATE rank_chatleaderboards
                 SET last_reset_ts = ${Date.now()}
@@ -86,7 +89,7 @@ class DataLayer {
     }
 
     clearScores(leaderBoardId) {
-        DB.getConnection((err, connection) => {
+        this.DB.getConnection((err, connection) => {
             const clearScores = `
                 UPDATE rank_chatscores
                 SET score = 0
@@ -103,7 +106,7 @@ class DataLayer {
     resetLeaderBoard(leaderBoardId) {
         return new Promise(
             (resolve, reject) => {
-                DB.getConnection((err, connection) => {
+                this.DB.getConnection((err, connection) => {
                     const resetLeaderBoard =  `
                         UPDATE rank_chatleaderboards
                         SET last_reset_ts = ${Date.now()}
@@ -134,7 +137,7 @@ class DataLayer {
     }
 
     insertScore(leaderBoardId, score, userId, username) {
-        DB.getConnection((err, connection) => {
+        this.DB.getConnection((err, connection) => {
             const escapedUsername =  mysql.escape(username);
 
             const insertScore = `
@@ -156,7 +159,7 @@ class DataLayer {
     getScore(leaderBoardId, userId) {
         return new Promise(
             (resolve, reject) => {
-                DB.getConnection((err, connection) => {
+                this.DB.getConnection((err, connection) => {
                     const getScore =  `
                             SELECT * FROM rank_chatscores
                             WHERE chatleaderboard_id = ${leaderBoardId} AND user_id = ${userId};
@@ -181,7 +184,7 @@ class DataLayer {
     getLeaderBoard(leaderBoardId) {
         return new Promise(
             (resolve, reject) => {
-                DB.getConnection((err, connection) => {
+                this.DB.getConnection((err, connection) => {
                     const getLeaderBoard =  `
                             SELECT * FROM rank_chatscores
                             WHERE chatleaderboard_id = ${leaderBoardId} AND score != 0
@@ -208,7 +211,7 @@ class DataLayer {
     getTopUser(leaderBoardId) {
         return new Promise(
             (resolve, reject) => {
-                DB.getConnection((err, connection) => {
+                this.DB.getConnection((err, connection) => {
                     const getLeaderBoard =  `
                             SELECT * FROM rank_chatscores
                             WHERE chatleaderboard_id = ${leaderBoardId}
@@ -235,7 +238,7 @@ class DataLayer {
     getFirstThreePositions(leaderBoardId) {
         return new Promise(
             (resolve, reject) => {
-                DB.getConnection((err, connection) => {
+                this.DB.getConnection((err, connection) => {
                     const getLeaderBoard =  `
                             SELECT * FROM rank_chatscores
                             WHERE chatleaderboard_id = ${leaderBoardId}
@@ -260,4 +263,4 @@ class DataLayer {
     }
 }
 
-module.exports = new DataLayer();
+module.exports = Leaderboard;

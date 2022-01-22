@@ -1,5 +1,5 @@
-const mariadb = require('mysql2');
-const config = require('../config.js');
+const mysql = require('mysql2');
+const config = require('../../config.js');
 const isDev = process.argv.includes("--dev");
 
 let poolConfig;
@@ -12,6 +12,6 @@ if (isDev) {
 
 poolConfig.multipleStatements = true;
 
-const pool = mariadb.createPool(poolConfig);
+const pool = mysql.createPool(poolConfig);
 
 module.exports = pool;
