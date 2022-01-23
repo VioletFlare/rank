@@ -28,6 +28,10 @@ class InstanceManager {
         console.log(reaction, user);
     }
 
+    _onVoiceStateUpdate(oldVoiceState, newVoiceState) {
+
+    }
+
     _initSessions() {
         if (!this.sessions.size) {
             for (const [guildId, guild] of this.client.guilds.cache.entries()) {
@@ -57,6 +61,10 @@ class InstanceManager {
 
         this.client.on(
             "messageReactionAdd", (reaction, user) => this._onMessageReactionAdd(reaction, user)
+        )
+
+        this.client.on(
+            "voiceStateUpdate", (oldVoiceState, newVoiceState) => this._onVoiceStateUpdate(oldVoiceState, newVoiceState)
         )
 
         this.client.on(
