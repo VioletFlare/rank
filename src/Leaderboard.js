@@ -175,7 +175,6 @@ class Leaderboard {
     }
 
     init() {
-        this.DAL.Leaderboard.insertGuild(this.guild.id, this.guild.name);
         this.DAL.Leaderboard.insertChatLeaderBoard(this.guild.id);
         this.DAL.Leaderboard.getLeaderBoardData(this.guild.id).then(
             leaderBoardData => {

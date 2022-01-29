@@ -6,28 +6,6 @@ class Leaderboard {
         this.DB = DB;
     }
 
-    insertGuild(guildId, name) {
-        this.DB.getConnection((err, connection) => {
-            if (err) throw err;
-
-            const escapedName =  mysql.escape(name);
-
-            const query = `
-                INSERT INTO rank_guilds
-                    (id, name)
-                VALUES
-                    (${guildId}, ${escapedName})
-               ON DUPLICATE KEY UPDATE
-                    name = ${escapedName};
-            `
-
-            connection.query(query, (error, results, fields) => {
-                connection.release();
-                if (error) throw error;
-            });
-        });
-    }
-
     insertChatLeaderBoard(guildId) {
         this.DB.getConnection((err, connection) => {
             if (err) throw err;

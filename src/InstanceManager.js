@@ -9,7 +9,7 @@ class InstanceManager {
         this.isDev = process.argv.includes("--dev");
         this.client = new Discord.Client({ 
             partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
-            intents: ['DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILDS', 'GUILD_MEMBERS']
+            intents: ['DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILDS', 'GUILD_MEMBERS', 'GUILD_VOICE_STATES']
         });
 
         this.sessions = new Map();
@@ -25,11 +25,21 @@ class InstanceManager {
     }
 
     _onMessageReactionAdd(reaction, user) {
-        console.log(reaction, user);
+        const guildId = reaction.message.guildId;
+        const rank = this.sessions.get(guildId);
+
+        if (rank) {
+            rank.onMessageReactionAdd(reaction, user);
+        }
     }
 
     _onVoiceStateUpdate(oldVoiceState, newVoiceState) {
+        const guildId = newVoiceState.guild.id;
+        const rank = this.sessions.get(guildId);
 
+        if (rank) {
+            rank.onVoiceStateUpdate(oldVoiceState, newVoiceState);
+        }
     }
 
     _initSessions() {
