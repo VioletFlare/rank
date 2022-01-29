@@ -55,11 +55,13 @@ class Activityboard {
 
             const insertScore = `
                 INSERT INTO rank_activitylogs
-                    (username, last_voice_active_ts, activityboard_id, user_id)
+                    (username, last_voice_active_ts, activityboard_id, user_id, latest_activity_ts)
                 VALUES
-                    (${escapedUsername}, ${Date.now()}, ${activityBoardId}, ${userId})
+                    (${escapedUsername}, ${Date.now()}, ${activityBoardId}, ${userId}, ${Date.now()})
                 ON DUPLICATE KEY UPDATE
-                    username = ${escapedUsername}, last_voice_active_ts = ${Date.now()};
+                    username = ${escapedUsername}, 
+                    last_voice_active_ts = ${Date.now()},
+                    latest_activity_ts = ${Date.now()};
             `;
 
             connection.query(insertScore, (error, results, fields) => {
@@ -75,11 +77,13 @@ class Activityboard {
 
             const insertScore = `
                 INSERT INTO rank_activitylogs
-                    (username, last_reaction_ts, activityboard_id, user_id)
+                    (username, last_reaction_ts, activityboard_id, user_id, latest_activity_ts)
                 VALUES
-                    (${escapedUsername}, ${Date.now()}, ${activityBoardId}, ${userId})
+                    (${escapedUsername}, ${Date.now()}, ${activityBoardId}, ${userId}, ${Date.now()})
                 ON DUPLICATE KEY UPDATE
-                    username = ${escapedUsername}, last_reaction_ts = ${Date.now()};
+                    username = ${escapedUsername}, 
+                    last_reaction_ts = ${Date.now()},
+                    latest_activity_ts = ${Date.now()};
             `;
 
             connection.query(insertScore, (error, results, fields) => {
@@ -95,11 +99,13 @@ class Activityboard {
 
             const insertScore = `
                 INSERT INTO rank_activitylogs
-                    (username, last_message_ts, activityboard_id, user_id)
+                    (username, last_message_ts, activityboard_id, user_id, latest_activity_ts)
                 VALUES
-                    (${escapedUsername}, ${Date.now()}, ${activityBoardId}, ${userId})
+                    (${escapedUsername}, ${Date.now()}, ${activityBoardId}, ${userId}, ${Date.now()})
                 ON DUPLICATE KEY UPDATE
-                    username = ${escapedUsername}, last_message_ts = ${Date.now()};
+                    username = ${escapedUsername}, 
+                    last_message_ts = ${Date.now()},
+                    latest_activity_ts = ${Date.now()};
             `;
 
             connection.query(insertScore, (error, results, fields) => {
@@ -107,6 +113,31 @@ class Activityboard {
                 connection.release();
             })
         });
+    }
+
+    getLeastActiveUsers(activityBoardId) {
+        return new Promise(
+            (resolve, reject) => {
+                this.DB.getConnection((err, connection) => {
+
+                    const query = `
+                        SELECT * FROM rank_activitylogs
+                        WHERE activityboard_id = ${activityBoardId}
+                    `;
+
+                    connection.query(query, (error, results, fields) => {
+                        if (error) throw error;
+                        connection.release();
+
+                        if (results === undefined) {
+                            reject(new Error("Results is undefined."))
+                        } else {
+                            resolve(results);
+                        }
+                    })
+                });
+            }
+        );
     }
 
 }

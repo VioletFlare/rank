@@ -30,7 +30,7 @@ class Rank {
         if (msg.content === "r/leaderboard") {
             this.Leaderboard.printLeaderBoard();
         } else if (msg.content === "r/leastactive") {
-            this.Leaderboard.printLeastActiveUsersBoard();
+            this.Activityboard.printLeastActiveUsersBoard();
         } else if (msg.content === "r/help") {
             console.log("boink");
         }
