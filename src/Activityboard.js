@@ -1,3 +1,5 @@
+const Discord = require("discord.js");
+
 class Activityboard {
     constructor(guild, DAL) {
         this.guild = guild;
@@ -15,6 +17,8 @@ class Activityboard {
     }
 
     onMessageCreate(msg) {
+        this.msg = msg;
+
         if (!msg.author.bot) {
             this.DAL.Activityboard.insertLastMessageRecord(
                 this.activityBoardData.id, 
@@ -63,8 +67,10 @@ class Activityboard {
             leaderBoardRepresentation = "The board just resetted. Try again later!"
         }
 
+        const timezone = new Date().toString().match(/([A-Z]+[\+-][0-9]+.*)/)[1];
         const footer = `
-        ⌛ Time the user was last active.
+⌛ Time the user was last active.
+🌐 Timezone: ${timezone}
         `
         const embed = new Discord.MessageEmbed()
             .setColor('#DAA520')
@@ -81,8 +87,28 @@ class Activityboard {
     _constructLeastActiveUsersBoardTable(leastActiveMembers) {
         let leaderBoardRepresentation = "";
 
-        leastActiveMembers.forEach(() => {
+        leastActiveMembers = leastActiveMembers.slice(0, 10);
 
+        leastActiveMembers.forEach((member, index) => {
+            let username = "";
+
+            if (member.nickname) {
+                username = member.nickname;
+            } else {
+                username = member.user.username;
+            }
+
+            let lastActive = "";
+
+            if (member.user.activity) {
+                lastActive = new Date(member.user.activity.latestActivityTimestamp).toLocaleString("it-IT"); 
+            } else {
+                lastActive = "Never";
+            }
+
+            lastActive = lastActive.padEnd(20, " ");
+
+            leaderBoardRepresentation += `\`${lastActive} ⌛ ${username}\`\n`;
         });
 
         this._sendLeastActiveUsersBoardEmbed(leaderBoardRepresentation);
