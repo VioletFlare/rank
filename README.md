@@ -2,7 +2,7 @@
   <p align="center">Rank 👑</p>
 </p>
 
-![node-shield-image]
+![node-shield-image] ![mariadb-shield-image]
 
 ## Description
 
@@ -47,3 +47,4 @@ module.exports = {
 The boards output a maximum of 10 users.
 
 [node-shield-image]: https://img.shields.io/static/v1?label=node&message=16.8.0&color=green
+[mariadb-shield-image]: https://img.shields.io/static/v1?label=MariaDB&message=10.3.31&color=blue
