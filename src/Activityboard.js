@@ -81,7 +81,9 @@ class Activityboard {
     
         this.msg.reply({ 
             embeds: [embed] 
-        });
+        }).catch(
+            error => console.error(error)
+        );
     }
 
     _constructLeastActiveUsersBoardTable(leastActiveMembers) {
@@ -101,7 +103,7 @@ class Activityboard {
             let lastActive = "";
 
             if (member.user.activity) {
-                lastActive = new Date(member.user.activity.latestActivityTimestamp).toLocaleString("it-IT"); 
+                lastActive = new Date(member.user.activity.latestActivityTimestamp).toLocaleString("en-GB"); 
             } else {
                 lastActive = "Never";
             }

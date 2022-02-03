@@ -65,7 +65,9 @@ class Leaderboard {
     
         this.msg.reply({ 
             embeds: [embed] 
-        });
+        }).catch(
+            error => console.error(error)
+        );;
     }
 
     _prepareLeaderboard(users, leaderboard) {
