@@ -92,7 +92,13 @@ class Activityboard {
         leastActiveMembers = leastActiveMembers.slice(0, 10);
 
         leastActiveMembers.forEach((member, index) => {
-            let mention =  `<@!${member.user.id}>`;
+            let username = "";
+
+            if (member.nickname) {
+                username = member.nickname;
+            } else {
+                username = member.user.username;
+            }
 
             let lastActive = "";
 
@@ -104,7 +110,7 @@ class Activityboard {
 
             lastActive = lastActive.padEnd(20, " ");
 
-            leaderBoardRepresentation += `\`${lastActive} ⌛ \`${mention}\n`;
+            leaderBoardRepresentation += `\`${lastActive} ⌛ ${username}\`\n`;
         });
 
         this._sendLeastActiveUsersBoardEmbed(leaderBoardRepresentation);
