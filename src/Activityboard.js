@@ -92,7 +92,7 @@ class Activityboard {
         leastActiveMembers = leastActiveMembers.slice(0, 10);
 
         leastActiveMembers.forEach((member, index) => {
-            let mention =  `<@${member.user.id}>`;
+            let mention =  `<@!${member.user.id}>`;
 
             let lastActive = "";
 
