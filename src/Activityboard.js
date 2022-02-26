@@ -104,7 +104,7 @@ class Activityboard {
 
             lastActive = lastActive.padEnd(20, " ");
 
-            leaderBoardRepresentation += `\`${lastActive} ⌛ ${mention}\`\n`;
+            leaderBoardRepresentation += `\`${lastActive} ⌛ \`${mention}\n`;
         });
 
         this._sendLeastActiveUsersBoardEmbed(leaderBoardRepresentation);
