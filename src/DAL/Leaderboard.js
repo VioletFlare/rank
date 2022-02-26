@@ -12,7 +12,8 @@ class Leaderboard {
 
             const query = `
                 INSERT IGNORE INTO rank_chatleaderboards
-                SET guild_id = ${guildId},
+                SET id = ${guildId},
+                guild_id = ${guildId},
                 last_reset_ts = ${Date.now()},
                 next_reset_time_offset = ${604800000},
                 name = '👑 Leader Board';

@@ -12,7 +12,8 @@ class Activityboard {
 
             const query = `
                 INSERT IGNORE INTO rank_activityboards
-                SET guild_id = ${guildId},
+                SET id = ${guildId},
+                guild_id = ${guildId},
                 name = '🕒 Activity Board';
             `
 
