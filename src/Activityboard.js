@@ -127,7 +127,7 @@ class Activityboard {
             const realMembers = new Map();
 
             allMembers.forEach((member, key) => {
-                if (!member.user.bot && this.guild.members.fetch(member.user.id)) {
+                if (!member.user.bot) {
                     realMembers.set(key, member);
                 }
             });
