@@ -124,37 +124,29 @@ class Activityboard {
 
     _prepareLeastActiveUsersBoard(leastActiveUsers) {
         this.guild.members.fetch().then(allMembers => {
-            const membersPresentInTheServer = [];
-           
-            allMembers.forEach((member) => {
-                if (!member.user.bot) {
-                    membersPresentInTheServer.push(this.guild.members.fetch(member.user.id));
+            const realMembers = new Map();
+
+            allMembers.forEach((member, key) => {
+                if (!member.user.bot && this.guild.members.fetch(member.user.id)) {
+                    realMembers.set(key, member);
                 }
             });
 
-            Promise.all(membersPresentInTheServer).then(members => {
-                const realMembers = new Map();
-                
-                members.forEach(
-                    (member) => realMembers.set(member.user.id, member)
-                );
+            leastActiveUsers.forEach(
+                user => this._enrichRealMembers(realMembers, user)
+            );
 
-                leastActiveUsers.forEach(
-                    user => this._enrichRealMembers(realMembers, user)
-                );
+            const leastActiveMembers = [];
 
-                const leastActiveMembers = [];
+            realMembers.forEach(
+                member => leastActiveMembers.push(member)
+            );
 
-                realMembers.forEach(
-                    member => leastActiveMembers.push(member)
-                );
-    
-                leastActiveMembers.sort(
-                    (m1, m2) => this._compareLeastActiveMembers(m1, m2)
-                );
-    
-                this._constructLeastActiveUsersBoardTable(leastActiveMembers);
-            });
+            leastActiveMembers.sort(
+                (m1, m2) => this._compareLeastActiveMembers(m1, m2)
+            );
+
+            this._constructLeastActiveUsersBoardTable(leastActiveMembers);
         });
     }
 
