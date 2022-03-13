@@ -168,7 +168,7 @@ class Leaderboard {
                             SELECT * FROM rank_chatscores
                             WHERE chatleaderboard_id = ${leaderBoardId} AND score != 0
                             ORDER BY score DESC
-                            LIMIT 10;
+                            LIMIT 1;
                         `;
 
                     connection.query(getLeaderBoard, (error, results, fields) => {

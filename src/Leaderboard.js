@@ -1,5 +1,4 @@
-const Discord = require("discord.js");
-
+const LeaderboardEmbed = require("./Embeds/LeaderboardEmbed.js");
 /*
     Three roles containing respectively "Famous", "Veteran" and "Advanced" should be present in the server;
     
@@ -48,26 +47,13 @@ class Leaderboard {
     }
 
     _sendLeaderBoardEmbed(leaderBoardRepresentation) {
-        if (!leaderBoardRepresentation) {
-            leaderBoardRepresentation = "The board just resetted. Try again later!"
+        const model = {
+            msg: this.msg,
+            leaderBoardRepresentation: leaderBoardRepresentation,
+            leaderBoardData: this.leaderBoardData
         }
-
-        const footer = `
-⭐ Number of messages committed.
-🏆 Next Awards: ${new Date(this.leaderBoardData.last_reset_ts + this.leaderBoardData.next_reset_time_offset)}
-        `
-        const embed = new Discord.MessageEmbed()
-            .setColor('#DAA520')
-            .setTitle("👑 Leader Board                 ")
-            .setDescription(leaderBoardRepresentation)
-            .setThumbnail('https://i.imgur.com/v5RR3ro.png')
-            .setFooter({ text: footer, iconURL: "" })
     
-        this.msg.reply({ 
-            embeds: [embed] 
-        }).catch(
-            error => console.error(error)
-        );;
+        LeaderboardEmbed.send(model);
     }
 
     _prepareLeaderboard(users, leaderboard) {

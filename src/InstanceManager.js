@@ -33,6 +33,15 @@ class InstanceManager {
         }
     }
 
+    _onInteractionCreate(interaction) {
+        const guildId = interaction.guildId;
+        const rank = this.sessions.get(guildId);
+
+        if (rank) {
+            rank.onInteractionCreate(interaction);
+        }
+    }
+
     _onVoiceStateUpdate(oldVoiceState, newVoiceState) {
         const guildId = newVoiceState.guild.id;
         const rank = this.sessions.get(guildId);
@@ -76,6 +85,10 @@ class InstanceManager {
         this.client.on(
             "voiceStateUpdate", (oldVoiceState, newVoiceState) => this._onVoiceStateUpdate(oldVoiceState, newVoiceState)
         )
+
+        this.client.on(
+            'interactionCreate', interaction => this._onInteractionCreate(interaction)
+        );
 
         this.client.on(
             "guildCreate", guild => this._initSession(guild)

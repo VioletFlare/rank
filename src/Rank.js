@@ -19,6 +19,18 @@ class Rank {
         this.Activityboard.onVoiceStateUpdate(oldVoiceState, newVoiceState);
     }
 
+    onInteractionCreate(interaction) {
+        switch (interaction.customId) {
+            case 'LeaderboardEmbed::NextPage':
+                
+            break;
+            case 'LeaderboardEmbed::PrevPage':
+
+            break;
+        }
+        
+    }
+
     onMessageReactionAdd(reaction, user) {
         this.Activityboard.onMessageReactionAdd(reaction, user);
     }
