@@ -173,7 +173,7 @@ class Leaderboard {
             } else {
                 this._updateLeaderBoardData();
             }
-        }, 1000);
+        }, 600000);
     }
 
     init() {
