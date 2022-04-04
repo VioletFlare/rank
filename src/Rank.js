@@ -20,14 +20,7 @@ class Rank {
     }
 
     onInteractionCreate(interaction) {
-        switch (interaction.customId) {
-            case 'LeaderboardEmbed::NextPage':
-                
-            break;
-            case 'LeaderboardEmbed::PrevPage':
-
-            break;
-        }
+        this.Leaderboard.onInteractionCreate(interaction);
         
     }
 
@@ -40,7 +33,7 @@ class Rank {
         this.Activityboard.onMessageCreate(msg);
 
         if (msg.content === "r/leaderboard") {
-            this.Leaderboard.printLeaderBoard();
+            this.Leaderboard.printLeaderBoard(1, msg);
         } else if (msg.content === "r/leastactive") {
             this.Activityboard.printLeastActiveUsersBoard();
         } else if (msg.content === "r/help") {

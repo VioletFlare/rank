@@ -1,4 +1,6 @@
 const LeaderboardEmbed = require("./Embeds/LeaderboardEmbed.js");
+const Board = require("./Board.js");
+
 /*
     Three roles containing respectively "Famous", "Veteran" and "Advanced" should be present in the server;
     
@@ -9,13 +11,15 @@ const LeaderboardEmbed = require("./Embeds/LeaderboardEmbed.js");
     Are roles assigned respecitvely to the position in the leaderboard every.
 */
 
-class Leaderboard {
+class Leaderboard extends Board {
 
     constructor(guild, DAL) {
+        super();
         this.guild = guild;
         this.DAL = DAL;
         this.leaderBoardData = {};
         this.topUser = {};
+        this.messagePage = {};
     }
 
     _setActivity(userId) {
@@ -46,17 +50,7 @@ class Leaderboard {
         };
     }
 
-    _sendLeaderBoardEmbed(leaderBoardRepresentation) {
-        const model = {
-            msg: this.msg,
-            leaderBoardRepresentation: leaderBoardRepresentation,
-            leaderBoardData: this.leaderBoardData
-        }
-    
-        LeaderboardEmbed.send(model);
-    }
-
-    _prepareLeaderboard(users, leaderboard) {
+    _prepareLeaderboard(users, leaderboard, page, msg) {
         let leaderBoardRepresentation = "";
 
         users.forEach((user, index) => {
@@ -72,18 +66,30 @@ class Leaderboard {
                 username = user.username;
             }
 
+            const offset = this.calculateOffset(page);
+
             const position = index + 1; 
-            const positionUsername = `${position}. ${username}`.padEnd(32, " ");
+            const positionUsername = `${offset + position}. ${username}`.padEnd(32, " ");
             const msgCount = leaderboard[index].score.toString().padEnd(6, " ");
             
             leaderBoardRepresentation += `\`${positionUsername} ⭐ ${msgCount}\`\n`;
         })
 
-        this._sendLeaderBoardEmbed(leaderBoardRepresentation);
+        const model = {
+            msg: msg,
+            leaderBoardRepresentation: leaderBoardRepresentation,
+            leaderBoardData: this.leaderBoardData,
+            isNewMessage: isNewMessage
+        }
+        
+        LeaderboardEmbed.send(model);
+        
     }
 
-    printLeaderBoard() {
-        this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id).then(leaderboard => {
+    printLeaderBoard(page, msg) {
+        this.messagePage[msg.id] = page;
+
+        this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id, page).then(leaderboard => {
             let usersPromises = [];
 
             leaderboard.forEach(record => {
@@ -91,7 +97,7 @@ class Leaderboard {
             })
 
             Promise.all(usersPromises).then(
-                users => this._prepareLeaderboard(users, leaderboard)
+                users => this._prepareLeaderboard(users, leaderboard, page, msg)
             );
         });
     }
@@ -182,33 +188,59 @@ class Leaderboard {
         );
     }
 
+    _updateScore() {
+        const userId = this.msg.author.id;
+
+        this.DAL.Leaderboard.getScore(this.leaderBoardData.id, userId).then((score) => {
+            let newScore;
+
+            if (score) {
+                newScore = score.score + 1;
+            } else {
+                newScore = 1;
+            }
+            
+            this.DAL.Leaderboard.insertScore(this.leaderBoardData.id, newScore, userId, this.msg.author.username);
+        });
+    }
+
+    _updateStatus() {
+        this.DAL.Leaderboard.getTopUser(this.leaderBoardData.id).then(topUser => {
+            const hasTopUserChanged = this.topUser && topUser && this.topUser.user_id != topUser.user_id;
+
+            if (hasTopUserChanged) {
+                this.topUser.user_id = topUser.user_id;
+
+                this._setActivity(topUser.user_id); 
+            }
+        })
+    }
+
     onMessageCreate(msg) {
         this.msg = msg;
 
         if (!this.msg.author.bot) {
-            const userId = this.msg.author.id;
+            this._updateScore();
+            this._updateStatus();
+        }
+    }
 
-            this.DAL.Leaderboard.getScore(this.leaderBoardData.id, userId).then((score) => {
-                let newScore;
+    _nextPage(interaction) {
+        this.messagePage[interaction.message.id];
+    }
 
-                if (score) {
-                    newScore = score.score + 1;
-                } else {
-                    newScore = 1;
-                }
-                
-                this.DAL.Leaderboard.insertScore(this.leaderBoardData.id, newScore, userId, this.msg.author.username);
-            });
+    _prevPage(interaction) {
+        this.messagePage[interaction.message.id]
+    }
 
-            this.DAL.Leaderboard.getTopUser(this.leaderBoardData.id).then(topUser => {
-                const hasTopUserChanged = this.topUser && topUser && this.topUser.user_id != topUser.user_id;
-
-                if (hasTopUserChanged) {
-                    this.topUser.user_id = topUser.user_id;
-
-                    this._setActivity(topUser.user_id); 
-                }
-            })
+    onInteractionCreate(interaction) {
+        switch (interaction.customId) {
+            case 'LeaderboardEmbed::NextPage':
+                this._nextPage(interaction);
+            break;
+            case 'LeaderboardEmbed::PrevPage':
+                this._prevPage(interaction);
+            break;
         }
     }
 }

@@ -160,7 +160,7 @@ class Leaderboard {
         );
     }
 
-    getLeaderBoard(leaderBoardId) {
+    getLeaderBoard(leaderBoardId, offset) {
         return new Promise(
             (resolve, reject) => {
                 this.DB.getConnection((err, connection) => {
@@ -168,7 +168,7 @@ class Leaderboard {
                             SELECT * FROM rank_chatscores
                             WHERE chatleaderboard_id = ${leaderBoardId} AND score != 0
                             ORDER BY score DESC
-                            LIMIT 1;
+                            LIMIT ${offset}, 10;
                         `;
 
                     connection.query(getLeaderBoard, (error, results, fields) => {
