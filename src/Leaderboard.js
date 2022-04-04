@@ -119,7 +119,11 @@ class Leaderboard {
 
         if (shouldAssignRole) {
             this.guild.members.fetch(leaderBoard[position].user_id).then((member) => {
-                member.roles.add(role);
+                member.roles
+                .add(role)
+                .catch(
+                    error => console.error(error)
+                );
             });
         }
     }
@@ -129,9 +133,15 @@ class Leaderboard {
             role => role.name.includes(roleName)
         );
 
-        role.members.forEach(user => {
-            user.roles.remove(role);
-        });
+        if (role) {
+            role.members.forEach(user => {
+                user.roles
+                .remove(role)
+                .catch(
+                    error => console.error(error)
+                );
+            });
+        }
     }
 
     _handleReset() {
