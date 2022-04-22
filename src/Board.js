@@ -1,5 +1,9 @@
 class Board {
 
+    constructor() {
+        this.messagePage = {};
+    }
+
     calculateOffset(page) {
         const isFirstPage = !page || page <= 1;
         let offset;

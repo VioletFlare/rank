@@ -19,7 +19,6 @@ class Leaderboard extends Board {
         this.DAL = DAL;
         this.leaderBoardData = {};
         this.topUser = {};
-        this.messagePage = {};
     }
 
     _setActivity(userId) {
@@ -50,7 +49,7 @@ class Leaderboard extends Board {
         };
     }
 
-    _prepareLeaderboard(users, leaderboard, page, msg) {
+    _prepareLeaderboard(users, leaderboard, page, msg, isNewMessage) {
         let leaderBoardRepresentation = "";
 
         users.forEach((user, index) => {
@@ -86,10 +85,15 @@ class Leaderboard extends Board {
         
     }
 
-    printLeaderBoard(page, msg) {
-        this.messagePage[msg.id] = page;
+    printLeaderBoard(page, msg, isNewMessage) {
 
-        this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id, page).then(leaderboard => {
+        if (isNewMessage) {
+            this.messagePage[msg.id] = page;
+        }
+
+        const offset = this.calculateOffset(page);
+        
+        this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id, offset).then(leaderboard => {
             let usersPromises = [];
 
             leaderboard.forEach(record => {
@@ -97,7 +101,7 @@ class Leaderboard extends Board {
             })
 
             Promise.all(usersPromises).then(
-                users => this._prepareLeaderboard(users, leaderboard, page, msg)
+                users => this._prepareLeaderboard(users, leaderboard, page, msg, isNewMessage)
             );
         });
     }
@@ -235,21 +239,27 @@ class Leaderboard extends Board {
         }
     }
 
-    _nextPage(interaction) {
-        this.messagePage[interaction.message.id];
-    }
+    _navigate(interaction, isNextPage) {
+       const messageId = interaction.message.reference.messageId;
+       const currentPage = this.messagePage[messageId];
 
-    _prevPage(interaction) {
-        this.messagePage[interaction.message.id]
+       if (currentPage < 10 && isNextPage) {
+        this.messagePage[messageId] = currentPage + 1;
+       } else if (currentPage >= 1 && !isNextPage) {
+        this.messagePage[messageId] = currentPage - 1;
+       }
+
+       this.printLeaderBoard(this.messagePage[messageId], interaction.message, false)
+       interaction.deferUpdate();
     }
 
     onInteractionCreate(interaction) {
         switch (interaction.customId) {
             case 'LeaderboardEmbed::NextPage':
-                this._nextPage(interaction);
+                this._navigate(interaction, true);
             break;
             case 'LeaderboardEmbed::PrevPage':
-                this._prevPage(interaction);
+                this._navigate(interaction, false);
             break;
         }
     }
