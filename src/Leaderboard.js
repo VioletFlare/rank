@@ -249,8 +249,10 @@ class Leaderboard extends Board {
         this.messagePage[messageId] = currentPage - 1;
        }
 
-       this.printLeaderBoard(this.messagePage[messageId], interaction.message, false)
-       interaction.deferUpdate();
+       if (currentPage) {
+        this.printLeaderBoard(super.messagePage[messageId], interaction.message, false)
+        interaction.deferUpdate();
+       } 
     }
 
     onInteractionCreate(interaction) {
