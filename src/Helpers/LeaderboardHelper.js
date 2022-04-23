@@ -1,7 +1,31 @@
+const loadshToArray = require('lodash.toarray');
+const emojiRegex = require('emoji-regex');
+
 class LeaderboardHelper {
 
     constructor(guild) {
         this.guild = guild;
+    }
+
+    _countEmoji(string) {
+        const regex = emojiRegex();
+        const array = [...string.matchAll(regex)];
+
+        return array.length;
+    }
+
+    _getUsernamePadding(username) {
+        let padding = 32;
+
+        const array = loadshToArray(username);
+
+        if (username.length - array.length > 0) {
+            const emojiCount = this._countEmoji(username);
+
+            padding += username.length - array.length - emojiCount;
+        }
+
+        return padding;
     }
 
     _buildUserListRepresentation(users, leaderboard, offset) {
@@ -21,7 +45,8 @@ class LeaderboardHelper {
             }
 
             const position = index + 1; 
-            const positionUsername = `${offset + position}. ${username}`.padEnd(32, " ");
+            const usernamePadding = this._getUsernamePadding(username);
+            const positionUsername = `${offset + position}. ${username}`.padEnd(usernamePadding, " ");
             const msgCount = leaderboard[index].score.toString().padEnd(6, " ");
             
             leaderBoardRepresentation += `\`${positionUsername} ⭐ ${msgCount}\`\n`;

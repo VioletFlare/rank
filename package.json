@@ -12,6 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "discord.js": "^13.6.0",
+    "emoji-regex": "^10.1.0",
+    "lodash.toarray": "^4.4.0",
     "mariadb": "^2.5.5",
     "mysql2": "^2.3.3"
   }
