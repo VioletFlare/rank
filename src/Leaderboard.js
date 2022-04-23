@@ -70,18 +70,55 @@ class Leaderboard extends Board {
                 this.leaderBoardData = result[0];
             })
         });
+
+        this.messagePage = {};
     }
 
-    _sendLeaderBoardEmbed(msg, userListRepresentation, isNewMessage) {
+    _sendLeaderBoardEmbed(userListRepresentation, params) {
         const model = {
-            msg: msg,
+            msg: params.msg,
             userListRepresentation: userListRepresentation,
             leaderBoardData: this.leaderBoardData,
-            isNewMessage: isNewMessage
+            isNewMessage: params.isNewMessage,
+            numberOfPages: params.numberOfPages,
+            page: params.page
         }
         
         LeaderboardEmbed.send(model);
         
+    }
+
+    _handleValidRequest(params) {
+        const offset = super.calculateOffset(params.page);
+    
+        this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id, offset)
+        .then(
+            leaderboard => this.leaderBoardHelper.requestUserListRepresentation(leaderboard, offset)
+        ).then(
+            userListRepresentation => this._sendLeaderBoardEmbed(userListRepresentation, params)
+        );
+    }
+
+    _executeCommand(params) {
+        const command = this.DAL.Leaderboard.getNumberOfPages(this.leaderBoardData.id).then((numberOfPages) => {
+            let result;
+
+            if (numberOfPages === 0) numberOfPages = 1;
+
+            const isRequestedPageValid = params.page <= numberOfPages && params.page >= 1;
+
+            if (isRequestedPageValid) {
+                params.numberOfPages = numberOfPages; 
+                this._handleValidRequest(params);
+                result = Promise.resolve(true);
+            } else {
+                result = Promise.resolve(false);
+            }
+
+            return result;
+        })
+
+        return command;
     }
 
     interceptLeaderBoardCommand(params) {
@@ -89,14 +126,7 @@ class Leaderboard extends Board {
             this.messagePage[params.msg.id] = params.page;
         }
 
-        const offset = super.calculateOffset(params.page);
-        
-        const command = this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id, offset)
-            .then(
-                leaderboard => this.leaderBoardHelper.requestUserListRepresentation(leaderboard, offset)
-            ).then(
-                userListRepresentation => this._sendLeaderBoardEmbed(params.msg, userListRepresentation, params.isNewMessage)
-            );
+        const command = this._executeCommand(params);
 
         return command;
     }
@@ -150,22 +180,18 @@ class Leaderboard extends Board {
         }
     }
 
-    _navigate(interaction, isNextPage) {
-       super.navigate(
-           interaction, 
-           isNextPage, 
-           params => this.interceptLeaderBoardCommand(params)
+    _navigate(interaction) {
+        super.navigate(
+            interaction,
+            params => this.interceptLeaderBoardCommand(params)
         );
     }
 
     onInteractionCreate(interaction) {
-        switch (interaction.customId) {
-            case 'LeaderboardEmbed::NextPage':
-                this._navigate(interaction, true);
-            break;
-            case 'LeaderboardEmbed::PrevPage':
-                this._navigate(interaction, false);
-            break;
+        const scope = interaction.customId.split("::")[0];
+
+        if (scope === "LeaderboardEmbed") {
+            this._navigate(interaction);
         }
     }
 

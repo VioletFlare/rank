@@ -10,6 +10,8 @@ class LeaderboardEmbed {
         const footer = `
 ⭐ Number of messages committed.
 🏆 Next Awards: ${new Date(model.leaderBoardData.last_reset_ts + model.leaderBoardData.next_reset_time_offset)}
+---
+(Page ${model.page} of ${model.numberOfPages})
         `
         const embed = new Discord.MessageEmbed()
             .setColor('#DAA520')

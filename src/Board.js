@@ -17,27 +17,61 @@ class Board {
         return offset;
     }
 
-    navigate(interaction, isNextPage, callback) {
-        const messageId = interaction.message.reference.messageId;
-        const currentPage = this.messagePage[messageId];
- 
-        if (currentPage < 10 && isNextPage) {
-         this.messagePage[messageId] = currentPage + 1;
-        } else if (currentPage > 1 && !isNextPage) {
-         this.messagePage[messageId] = currentPage - 1;
+    navigate(interaction, callback) {
+        const event = interaction.customId.split("::")[1];
+
+        const navigationParams = {
+            interaction: interaction,
+
         }
+
+        switch(event) {
+            case 'NextPage':
+                navigationParams.isNextPage = true;
+                this.navigateTo(navigationParams, callback);
+            break;
+            case 'PrevPage':
+                navigationParams.isNextPage = false;
+                this.navigateTo(navigationParams, callback);
+            break;
+        }
+
+    }
+
+    _getCurrentPage(navigationParams) {
+        let currentPage = this.messagePage[navigationParams.interaction.message.reference.messageId];
+ 
+        if (navigationParams.isNextPage) {
+         currentPage = currentPage + 1;
+        } else if (!navigationParams.isNextPage && currentPage > 1) {
+         currentPage = currentPage - 1;
+        }
+
+        return currentPage;
+    }
+
+    _handleInteraction(result, navigationParams) {
+        navigationParams.interaction.deferUpdate().catch(
+            error => console.error(error)
+        )
+
+        if (result) {
+            this.messagePage[navigationParams.interaction.message.reference.messageId] = this._getCurrentPage(navigationParams);
+        }
+    }
+
+    navigateTo(navigationParams, callback) {
+        const currentPage = this._getCurrentPage(navigationParams)
 
         if (currentPage) {
             const params = {
-                msg: interaction.message, 
-                page: this.messagePage[messageId], 
+                msg: navigationParams.interaction.message, 
+                page: currentPage, 
                 isNewMessage: false
             }
 
             callback(params).then(
-                () => interaction.deferUpdate().catch(
-                    error => console.error(error)
-                )
+                (result) => this._handleInteraction(result, navigationParams)
             );
         }
     }

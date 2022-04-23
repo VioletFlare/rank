@@ -240,6 +240,38 @@ class Leaderboard {
             }
         );
     }
+
+    getNumberOfPages(leaderBoardId) {
+        return new Promise(
+            (resolve, reject) => {
+                this.DB.getConnection((err, connection) => {
+                    const getLeaderBoard =  `
+                         SELECT 
+                            FLOOR(COUNT(*) / 10) + CEIL((COUNT(*) % 10) / 10) 
+                         FROM rank_chatscores
+                         WHERE chatleaderboard_id = ${leaderBoardId} AND score != 0
+                    `;
+
+                    connection.query(getLeaderBoard, (error, results, fields) => {
+                        if (error) throw error;
+                        connection.release();
+
+                        if (results === undefined) {
+                            reject(new Error("Results is undefined."))
+                        } else {
+                            const entries = Object.entries(results[0]);
+                            const result = entries[0][1];
+
+                            resolve(
+                                Number(result)
+                            );
+                        }
+                    });
+
+                });
+            }
+        );
+    }
 }
 
 module.exports = Leaderboard;
