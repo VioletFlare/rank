@@ -18,25 +18,6 @@ class Leaderboard extends Board {
         this.guild = guild;
         this.DAL = DAL;
         this.leaderBoardData = {};
-        this.topUser = {};
-    }
-
-    _setActivity(userId) {
-        const member = this.guild.members.cache.find(
-            member => member.user.id === userId
-        );
-
-        if (member && member.nickname) {
-            this.guild.client.user.setActivity(
-                `🏆 ${member.nickname}`, { type: 'PLAYING' }
-            );
-        } else {
-            this.guild.client.users.fetch(userId).then(user => {
-                this.guild.client.user.setActivity(
-                    `🏆 ${user.username}`, { type: 'PLAYING' }
-                );
-            });
-        }
     }
 
     _debounce(func, timeout = 10000) {
@@ -188,15 +169,6 @@ class Leaderboard extends Board {
             leaderBoardData => {
                 this.leaderBoardData = leaderBoardData;
 
-                this.DAL.Leaderboard.getTopUser(this.leaderBoardData.id).then(
-                    topUser => {
-                        if (topUser) {
-                            this.topUser = topUser;
-                            this._setActivity(this.topUser.user_id);
-                        }   
-                    } 
-                );
-
                 this._startWatcher();
             } 
         );
@@ -218,41 +190,20 @@ class Leaderboard extends Board {
         });
     }
 
-    _updateStatus() {
-        this.DAL.Leaderboard.getTopUser(this.leaderBoardData.id).then(topUser => {
-            const hasTopUserChanged = this.topUser && topUser && this.topUser.user_id != topUser.user_id;
-
-            if (hasTopUserChanged) {
-                this.topUser.user_id = topUser.user_id;
-
-                this._setActivity(topUser.user_id); 
-            }
-        })
-    }
-
     onMessageCreate(msg) {
         this.msg = msg;
 
         if (!this.msg.author.bot) {
             this._updateScore();
-            this._updateStatus();
         }
     }
 
     _navigate(interaction, isNextPage) {
-       const messageId = interaction.message.reference.messageId;
-       const currentPage = this.messagePage[messageId];
-
-       if (currentPage < 10 && isNextPage) {
-        this.messagePage[messageId] = currentPage + 1;
-       } else if (currentPage >= 1 && !isNextPage) {
-        this.messagePage[messageId] = currentPage - 1;
-       }
-
-       if (currentPage) {
-        this.printLeaderBoard(super.messagePage[messageId], interaction.message, false)
-        interaction.deferUpdate();
-       } 
+       super.navigate(
+           interaction, 
+           isNextPage, 
+           (messagePage, msg, isNextPage) => this.printLeaderBoard(messagePage, msg, isNextPage)
+        );
     }
 
     onInteractionCreate(interaction) {

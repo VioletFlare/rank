@@ -8,11 +8,18 @@ class Rank {
         this.Leaderboard = new Leaderboard(guild, DAL);
         this.Activityboard = new Activityboard(guild, DAL);
     }
+
+    _setActivity() {
+        this.guild.client.user.setActivity(
+            `r/help`
+        );
+    }
     
     init() {
         this.DAL.insertGuild(this.guild.id, this.guild.name);
         this.Leaderboard.init();
         this.Activityboard.init();
+        this._setActivity();
     }
 
     onVoiceStateUpdate(oldVoiceState, newVoiceState) {
