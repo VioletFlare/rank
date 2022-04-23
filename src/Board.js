@@ -23,16 +23,21 @@ class Board {
  
         if (currentPage < 10 && isNextPage) {
          this.messagePage[messageId] = currentPage + 1;
-        } else if (currentPage >= 1 && !isNextPage) {
+        } else if (currentPage > 1 && !isNextPage) {
          this.messagePage[messageId] = currentPage - 1;
         }
 
         if (currentPage) {
-            interaction.deferUpdate();
-            callback(
-                    this.messagePage[messageId],
-                    interaction.message,
-                    false
+            const params = {
+                msg: interaction.message, 
+                page: this.messagePage[messageId], 
+                isNewMessage: false
+            }
+
+            callback(params).then(
+                () => interaction.deferUpdate().catch(
+                    error => console.error(error)
+                )
             );
         }
     }

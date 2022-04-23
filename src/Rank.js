@@ -40,7 +40,11 @@ class Rank {
         this.Activityboard.onMessageCreate(msg);
 
         if (msg.content === "r/leaderboard") {
-            this.Leaderboard.printLeaderBoard(1, msg, true);
+            this.Leaderboard.interceptLeaderBoardCommand({
+                msg: msg, 
+                page: 1, 
+                isNewMessage: true
+            });
         } else if (msg.content === "r/leastactive") {
             this.Activityboard.printLeastActiveUsersBoard();
         } else if (msg.content === "r/help") {

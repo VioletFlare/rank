@@ -3,8 +3,8 @@ const Discord = require("discord.js");
 class LeaderboardEmbed {
 
     send(model) {
-        if (!model.leaderBoardRepresentation) {
-            model.leaderBoardRepresentation = "The board just resetted. Try again later!"
+        if (!model.userListRepresentation) {
+            model.userListRepresentation = "The board just resetted. Try again later!"
         }
 
         const footer = `
@@ -14,7 +14,7 @@ class LeaderboardEmbed {
         const embed = new Discord.MessageEmbed()
             .setColor('#DAA520')
             .setTitle("👑 Leader Board                 ")
-            .setDescription(model.leaderBoardRepresentation)
+            .setDescription(model.userListRepresentation)
             .setThumbnail('https://i.imgur.com/v5RR3ro.png')
             .setFooter({ text: footer, iconURL: "" })
 

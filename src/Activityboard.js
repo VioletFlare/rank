@@ -7,15 +7,6 @@ class Activityboard {
         this.activityBoardData = {};
     }
 
-    init() {
-        this.DAL.Activityboard.insertActivityBoard(this.guild.id);
-        this.DAL.Activityboard.getActivityBoardData(this.guild.id).then(
-            activityBoardData => {
-                this.activityBoardData = activityBoardData;
-            } 
-        );
-    }
-
     onMessageCreate(msg) {
         this.msg = msg;
 
@@ -157,6 +148,16 @@ class Activityboard {
             }
         )
     }
+
+    init() {
+        this.DAL.Activityboard.insertActivityBoard(this.guild.id);
+        this.DAL.Activityboard.getActivityBoardData(this.guild.id).then(
+            activityBoardData => {
+                this.activityBoardData = activityBoardData;
+            } 
+        );
+    }
+
 }
 
 module.exports = Activityboard;

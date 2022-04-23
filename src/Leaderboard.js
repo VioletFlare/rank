@@ -1,5 +1,6 @@
-const LeaderboardEmbed = require("./Embeds/LeaderboardEmbed.js");
 const Board = require("./Board.js");
+const LeaderBoardHelper = require("./Helpers/LeaderboardHelper.js");
+const LeaderboardEmbed = require("./Embeds/LeaderboardEmbed.js");
 
 /*
     Three roles containing respectively "Famous", "Veteran" and "Advanced" should be present in the server;
@@ -18,73 +19,6 @@ class Leaderboard extends Board {
         this.guild = guild;
         this.DAL = DAL;
         this.leaderBoardData = {};
-    }
-
-    _debounce(func, timeout = 10000) {
-        let timer;
-        return (...args) => {
-            clearTimeout(timer);
-            timer = setTimeout(
-                () => { func.apply(this, args); }, timeout
-            );
-        };
-    }
-
-    _prepareLeaderboard(users, leaderboard, page, msg, isNewMessage) {
-        let leaderBoardRepresentation = "";
-
-        users.forEach((user, index) => {
-            const member = this.guild.members.cache.find(
-                member => member.user.id === user.id 
-            );
-
-            let username;
-
-            if (member && member.nickname) {
-                username = member.nickname;
-            } else {
-                username = user.username;
-            }
-
-            const offset = this.calculateOffset(page);
-
-            const position = index + 1; 
-            const positionUsername = `${offset + position}. ${username}`.padEnd(32, " ");
-            const msgCount = leaderboard[index].score.toString().padEnd(6, " ");
-            
-            leaderBoardRepresentation += `\`${positionUsername} ⭐ ${msgCount}\`\n`;
-        })
-
-        const model = {
-            msg: msg,
-            leaderBoardRepresentation: leaderBoardRepresentation,
-            leaderBoardData: this.leaderBoardData,
-            isNewMessage: isNewMessage
-        }
-        
-        LeaderboardEmbed.send(model);
-        
-    }
-
-    printLeaderBoard(page, msg, isNewMessage) {
-
-        if (isNewMessage) {
-            this.messagePage[msg.id] = page;
-        }
-
-        const offset = this.calculateOffset(page);
-        
-        this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id, offset).then(leaderboard => {
-            let usersPromises = [];
-
-            leaderboard.forEach(record => {
-                usersPromises.push(this.guild.client.users.fetch(record.user_id));
-            })
-
-            Promise.all(usersPromises).then(
-                users => this._prepareLeaderboard(users, leaderboard, page, msg, isNewMessage)
-            );
-        });
     }
 
     _assignRole(leaderBoard, roleName, position) {
@@ -138,6 +72,35 @@ class Leaderboard extends Board {
         });
     }
 
+    _sendLeaderBoardEmbed(msg, userListRepresentation, isNewMessage) {
+        const model = {
+            msg: msg,
+            userListRepresentation: userListRepresentation,
+            leaderBoardData: this.leaderBoardData,
+            isNewMessage: isNewMessage
+        }
+        
+        LeaderboardEmbed.send(model);
+        
+    }
+
+    interceptLeaderBoardCommand(params) {
+        if (params.isNewMessage) {
+            this.messagePage[params.msg.id] = params.page;
+        }
+
+        const offset = super.calculateOffset(params.page);
+        
+        const command = this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id, offset)
+            .then(
+                leaderboard => this.leaderBoardHelper.requestUserListRepresentation(leaderboard, offset)
+            ).then(
+                userListRepresentation => this._sendLeaderBoardEmbed(params.msg, userListRepresentation, params.isNewMessage)
+            );
+
+        return command;
+    }
+
     _updateLeaderBoardData() {
         this.DAL.Leaderboard.getLeaderBoardData(this.guild.id).then(
             leaderBoardData => {
@@ -161,17 +124,6 @@ class Leaderboard extends Board {
                 this._updateLeaderBoardData();
             }
         }, 600000);
-    }
-
-    init() {
-        this.DAL.Leaderboard.insertChatLeaderBoard(this.guild.id);
-        this.DAL.Leaderboard.getLeaderBoardData(this.guild.id).then(
-            leaderBoardData => {
-                this.leaderBoardData = leaderBoardData;
-
-                this._startWatcher();
-            } 
-        );
     }
 
     _updateScore() {
@@ -202,7 +154,7 @@ class Leaderboard extends Board {
        super.navigate(
            interaction, 
            isNextPage, 
-           (messagePage, msg, isNextPage) => this.printLeaderBoard(messagePage, msg, isNextPage)
+           params => this.interceptLeaderBoardCommand(params)
         );
     }
 
@@ -215,6 +167,19 @@ class Leaderboard extends Board {
                 this._navigate(interaction, false);
             break;
         }
+    }
+
+    init() {
+        this.DAL.Leaderboard.insertChatLeaderBoard(this.guild.id);
+        this.DAL.Leaderboard.getLeaderBoardData(this.guild.id).then(
+            leaderBoardData => {
+                this.leaderBoardData = leaderBoardData;
+
+                this._startWatcher();
+            } 
+        );
+
+        this.leaderBoardHelper = new LeaderBoardHelper(this.guild);
     }
 }
 
