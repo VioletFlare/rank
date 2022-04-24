@@ -46,7 +46,11 @@ class Rank {
                 isNewMessage: true
             });
         } else if (msg.content === "r/leastactive") {
-            this.Activityboard.printLeastActiveUsersBoard();
+            this.Activityboard.printLeastActiveUsersBoard({
+                msg: msg,
+                page: 1,
+                isNewMessage: true
+            });
         } else if (msg.content === "r/help") {
             console.log("boink");
         }
