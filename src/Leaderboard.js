@@ -182,19 +182,11 @@ class Leaderboard extends Board {
         }
     }
 
-    _navigate(interaction) {
+    onInteractionCreate(interaction) {
         super.navigate(
             interaction,
             params => this.interceptLeaderBoardCommand(params)
         );
-    }
-
-    onInteractionCreate(interaction) {
-        const scope = interaction.customId.split("::")[0];
-
-        if (scope === "LeaderboardEmbed") {
-            this._navigate(interaction);
-        }
     }
 
     init() {
