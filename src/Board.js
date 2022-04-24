@@ -28,11 +28,11 @@ class Board {
         switch(event) {
             case 'NextPage':
                 navigationParams.isNextPage = true;
-                this.navigateTo(navigationParams, callback);
+                this._navigateTo(navigationParams, callback);
             break;
             case 'PrevPage':
                 navigationParams.isNextPage = false;
-                this.navigateTo(navigationParams, callback);
+                this._navigateTo(navigationParams, callback);
             break;
         }
 
@@ -60,7 +60,7 @@ class Board {
         }
     }
 
-    navigateTo(navigationParams, callback) {
+    _navigateTo(navigationParams, callback) {
         const currentPage = this._getCurrentPage(navigationParams)
 
         if (currentPage) {
