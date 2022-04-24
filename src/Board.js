@@ -49,7 +49,7 @@ class Board {
  
         if (navigationParams.isNextPage) {
          currentPage = currentPage + 1;
-        } else if (!navigationParams.isNextPage && currentPage > 1) {
+        } else if (!navigationParams.isNextPage && currentPage >= 0) {
          currentPage = currentPage - 1;
         }
 
@@ -69,7 +69,7 @@ class Board {
     _navigateTo(navigationParams, callback) {
         const currentPage = this._getCurrentPage(navigationParams)
 
-        if (currentPage) {
+        if (currentPage >= 0) {
             const params = {
                 msg: navigationParams.interaction.message, 
                 page: currentPage, 

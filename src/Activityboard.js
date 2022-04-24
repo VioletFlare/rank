@@ -77,20 +77,26 @@ class Activityboard extends Board {
         return numberOfPages;
     }
 
+    _handleValidRequest(params) {
+        const offset = super.calculateOffset(params.page);
+        const leastActiveMembersPage = this._getPage(params.leastActiveRealMembers, offset);
+        const userListRepresentation = this.activityboardHelper.requestUserListRepresentation(leastActiveMembersPage);
+
+        this._sendLeastActiveUsersBoardEmbed(params, userListRepresentation);
+    }
+
     _executeCommand(params) {
         super._executeCommand(params);
-        const offset = super.calculateOffset(params.page);
 
         return this.ActivityboardProvider.getLeastActiveRealMembers(this.activityBoardData.id).then(
             leastActiveRealMembers => {
                 const numberOfPages = this._getNumberOfPages(leastActiveRealMembers.length);
+                const isRequestedPageValid = params.page <= numberOfPages && params.page >= 1;
 
-                if (params.page >= 1 && params.page <= numberOfPages) {
+                if (isRequestedPageValid) {
                     params.numberOfPages = numberOfPages;
-                    const leastActiveMembersPage = this._getPage(leastActiveRealMembers, offset);
-                    const userListRepresentation = this.activityboardHelper.requestUserListRepresentation(leastActiveMembersPage);
-    
-                    this._sendLeastActiveUsersBoardEmbed(params, userListRepresentation);
+                    params.leastActiveRealMembers = leastActiveRealMembers;
+                    this._handleValidRequest(params);
 
                     return Promise.resolve(true);
                 } else {
