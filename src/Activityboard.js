@@ -1,19 +1,14 @@
-const Discord = require("discord.js");
+const Board = require("./Board.js");
+const ActivityboardProvider = require("./Providers/ActivityboardProvider");
+const ActivityboardEmbed = require("./Embeds/ActivityboardEmbed.js");
+const ActivityboardHelper = require("./Helpers/ActivityboardHelper.js");
 
-class Activityboard {
+class Activityboard extends Board {
     constructor(guild, DAL) {
+        super();
         this.guild = guild;
         this.DAL = DAL;
         this.activityBoardData = {};
-    }
-
-    init() {
-        this.DAL.Activityboard.insertActivityBoard(this.guild.id);
-        this.DAL.Activityboard.getActivityBoardData(this.guild.id).then(
-            activityBoardData => {
-                this.activityBoardData = activityBoardData;
-            } 
-        );
     }
 
     onMessageCreate(msg) {
@@ -48,115 +43,81 @@ class Activityboard {
         }
     }
 
-    _enrichRealMembers(realMembers, user) {
-        const member = realMembers.get(user.user_id);
-
-        if (member) {
-            member.user.activity = {};
-            member.user.activity.lastMessageTimestamp = user.last_message_ts;
-            member.user.activity.lastReactionTimestamp = user.last_reaction_ts;
-            member.user.activity.lastVoiceActiveTimestamp = user.last_voice_active_ts;
-            member.user.activity.latestActivityTimestamp = user.latest_activity_ts;
-
-            realMembers.set(user.user_id, member);
-        }
-    }
-
-    _sendLeastActiveUsersBoardEmbed(leaderBoardRepresentation) {
-        if (!leaderBoardRepresentation) {
-            leaderBoardRepresentation = "The board just resetted. Try again later!"
-        }
-
-        const timezone = new Date().toString().match(/([A-Z]+[\+-][0-9]+.*)/)[1];
-        const footer = `
-⌛ Time the user was last active.
-🌐 Timezone: ${timezone}
-        `
-        const embed = new Discord.MessageEmbed()
-            .setColor('#DAA520')
-            .setTitle("🕒 Activity Board                 ")
-            .setDescription(leaderBoardRepresentation)
-            .setThumbnail('https://i.imgur.com/v5RR3ro.png')
-            .setFooter({ text: footer, iconURL: "" })
-    
-        this.msg.reply({ 
-            embeds: [embed] 
-        }).catch(
-            error => console.error(error)
+    onInteractionCreate(interaction) {
+        super.navigate(
+            interaction,
+            params => this.interceptLeastActiveUsersBoardCommand(params)
         );
     }
 
-    _constructLeastActiveUsersBoardTable(leastActiveMembers) {
-        let leaderBoardRepresentation = "";
-
-        leastActiveMembers = leastActiveMembers.slice(0, 10);
-
-        leastActiveMembers.forEach((member, index) => {
-            const mention = `<@${member.user.id}>`;
-
-            let lastActive = "";
-
-            if (member.user.activity) {
-                lastActive = new Date(member.user.activity.latestActivityTimestamp).toLocaleString("en-GB"); 
-            } else {
-                lastActive = "Never";
-            }
-
-            lastActive = lastActive.padEnd(20, " ");
-
-            leaderBoardRepresentation += `\`${lastActive} ⌛ \`${mention}\n`;
-        });
-
-        this._sendLeastActiveUsersBoardEmbed(leaderBoardRepresentation);
-    }
-
-    _compareLeastActiveMembers(m1, m2) {
-        if (m1.user.activity && m2.user.activity) {
-            return m1.user.activity.latestActivityTimestamp - m2.user.activity.latestActivityTimestamp;
-        } else if (m1.user.activity) {
-            return 1;
-        } else if (m2.user.activity) {
-            return -1;
-        } else {
-            return 0;
+    _sendLeastActiveUsersBoardEmbed(params, userListRepresentation) {
+        const model = {
+            userListRepresentation: userListRepresentation,
+            msg: params.msg,
+            page: params.page,
+            isNewMessage: params.isNewMessage,
+            numberOfPages: params.numberOfPages
         }
+
+        ActivityboardEmbed.send(model);
     }
 
-    _prepareLeastActiveUsersBoard(leastActiveUsers) {
-        this.guild.members.fetch().then(allMembers => {
-            const realMembers = new Map();
+    _getPage(leastActiveMembers, offset) {
+        const limit = offset + 10;
 
-            allMembers.forEach((member, key) => {
-                if (!member.user.bot) {
-                    realMembers.set(key, member);
+        return leastActiveMembers.slice(offset, limit);
+    }
+
+    _getNumberOfPages(entries) {
+        const numberOfPages = Math.floor(entries / 10) + 
+                              Math.ceil(
+                                  (entries % 10) / 10
+                              )
+    
+        return numberOfPages;
+    }
+
+    _executeCommand(params) {
+        super._executeCommand(params);
+        const offset = super.calculateOffset(params.page);
+
+        return this.ActivityboardProvider.getLeastActiveRealMembers(this.activityBoardData.id).then(
+            leastActiveRealMembers => {
+                const numberOfPages = this._getNumberOfPages(leastActiveRealMembers.length);
+
+                if (params.page >= 1 && params.page <= numberOfPages) {
+                    params.numberOfPages = numberOfPages;
+                    const leastActiveMembersPage = this._getPage(leastActiveRealMembers, offset);
+                    const userListRepresentation = this.activityboardHelper.requestUserListRepresentation(leastActiveMembersPage);
+    
+                    this._sendLeastActiveUsersBoardEmbed(params, userListRepresentation);
+
+                    return Promise.resolve(true);
+                } else {
+                    return Promise.resolve(false);
                 }
-            });
-
-            leastActiveUsers.forEach(
-                user => this._enrichRealMembers(realMembers, user)
-            );
-
-            const leastActiveMembers = [];
-
-            realMembers.forEach(
-                member => leastActiveMembers.push(member)
-            );
-
-            leastActiveMembers.sort(
-                (m1, m2) => this._compareLeastActiveMembers(m1, m2)
-            );
-
-            this._constructLeastActiveUsersBoardTable(leastActiveMembers);
-        });
-    }
-
-    printLeastActiveUsersBoard() {
-        this.DAL.Activityboard.getLeastActiveUsers(this.activityBoardData.id).then(
-            leastActiveUsers => {
-                this._prepareLeastActiveUsersBoard(leastActiveUsers)
-            }
+            } 
         )
     }
+
+    interceptLeastActiveUsersBoardCommand(params) {
+        const command = this._executeCommand(params)
+
+        return command;
+    }
+
+    init() {
+        this.DAL.Activityboard.insertActivityBoard(this.guild.id);
+        this.DAL.Activityboard.getActivityBoardData(this.guild.id).then(
+            activityBoardData => {
+                this.activityBoardData = activityBoardData;
+            } 
+        );
+
+        this.activityboardHelper = new ActivityboardHelper(this.guild);
+        this.ActivityboardProvider = new ActivityboardProvider(this.guild, this.DAL);
+    }
+
 }
 
 module.exports = Activityboard;

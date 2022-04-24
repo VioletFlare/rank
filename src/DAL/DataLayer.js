@@ -1,5 +1,5 @@
-const Leaderboard = require('./Leaderboard.js');
-const Activityboard = require('./Activityboard.js');
+const Leaderboard = require('./LeaderboardDAL.js');
+const Activityboard = require('./ActivityboardDAL.js');
 const DB = require('./DB.js');
 const mysql = require('mysql2');
 

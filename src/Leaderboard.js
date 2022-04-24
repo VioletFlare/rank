@@ -1,4 +1,6 @@
-const Discord = require("discord.js");
+const Board = require("./Board.js");
+const LeaderBoardHelper = require("./Helpers/LeaderboardHelper.js");
+const LeaderboardEmbed = require("./Embeds/LeaderboardEmbed.js");
 
 /*
     Three roles containing respectively "Famous", "Veteran" and "Advanced" should be present in the server;
@@ -10,104 +12,13 @@ const Discord = require("discord.js");
     Are roles assigned respecitvely to the position in the leaderboard every.
 */
 
-class Leaderboard {
+class Leaderboard extends Board {
 
     constructor(guild, DAL) {
+        super();
         this.guild = guild;
         this.DAL = DAL;
         this.leaderBoardData = {};
-        this.topUser = {};
-    }
-
-    _setActivity(userId) {
-        const member = this.guild.members.cache.find(
-            member => member.user.id === userId
-        );
-
-        if (member && member.nickname) {
-            this.guild.client.user.setActivity(
-                `🏆 ${member.nickname}`, { type: 'PLAYING' }
-            );
-        } else {
-            this.guild.client.users.fetch(userId).then(user => {
-                this.guild.client.user.setActivity(
-                    `🏆 ${user.username}`, { type: 'PLAYING' }
-                );
-            });
-        }
-    }
-
-    _debounce(func, timeout = 10000) {
-        let timer;
-        return (...args) => {
-            clearTimeout(timer);
-            timer = setTimeout(
-                () => { func.apply(this, args); }, timeout
-            );
-        };
-    }
-
-    _sendLeaderBoardEmbed(leaderBoardRepresentation) {
-        if (!leaderBoardRepresentation) {
-            leaderBoardRepresentation = "The board just resetted. Try again later!"
-        }
-
-        const footer = `
-⭐ Number of messages committed.
-🏆 Next Awards: ${new Date(this.leaderBoardData.last_reset_ts + this.leaderBoardData.next_reset_time_offset)}
-        `
-        const embed = new Discord.MessageEmbed()
-            .setColor('#DAA520')
-            .setTitle("👑 Leader Board                 ")
-            .setDescription(leaderBoardRepresentation)
-            .setThumbnail('https://i.imgur.com/v5RR3ro.png')
-            .setFooter({ text: footer, iconURL: "" })
-    
-        this.msg.reply({ 
-            embeds: [embed] 
-        }).catch(
-            error => console.error(error)
-        );;
-    }
-
-    _prepareLeaderboard(users, leaderboard) {
-        let leaderBoardRepresentation = "";
-
-        users.forEach((user, index) => {
-            const member = this.guild.members.cache.find(
-                member => member.user.id === user.id 
-            );
-
-            let username;
-
-            if (member && member.nickname) {
-                username = member.nickname;
-            } else {
-                username = user.username;
-            }
-
-            const position = index + 1; 
-            const positionUsername = `${position}. ${username}`.padEnd(32, " ");
-            const msgCount = leaderboard[index].score.toString().padEnd(6, " ");
-            
-            leaderBoardRepresentation += `\`${positionUsername} ⭐ ${msgCount}\`\n`;
-        })
-
-        this._sendLeaderBoardEmbed(leaderBoardRepresentation);
-    }
-
-    printLeaderBoard() {
-        this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id).then(leaderboard => {
-            let usersPromises = [];
-
-            leaderboard.forEach(record => {
-                usersPromises.push(this.guild.client.users.fetch(record.user_id));
-            })
-
-            Promise.all(usersPromises).then(
-                users => this._prepareLeaderboard(users, leaderboard)
-            );
-        });
     }
 
     _assignRole(leaderBoard, roleName, position) {
@@ -124,7 +35,9 @@ class Leaderboard {
                 .catch(
                     error => console.error(error)
                 );
-            });
+            }).catch(
+                error => console.error(error)
+            );
         }
     }
 
@@ -159,6 +72,63 @@ class Leaderboard {
                 this.leaderBoardData = result[0];
             })
         });
+
+        this.messagePage = {};
+    }
+
+    _sendLeaderBoardEmbed(userListRepresentation, params) {
+        const model = {
+            msg: params.msg,
+            userListRepresentation: userListRepresentation,
+            leaderBoardData: this.leaderBoardData,
+            isNewMessage: params.isNewMessage,
+            numberOfPages: params.numberOfPages,
+            page: params.page
+        }
+        
+        LeaderboardEmbed.send(model);
+        
+    }
+
+    _handleValidRequest(params) {
+        const offset = super.calculateOffset(params.page);
+    
+        this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id, offset)
+        .then(
+            leaderboard => this.leaderBoardHelper.requestUserListRepresentation(leaderboard, offset)
+        ).then(
+            userListRepresentation => this._sendLeaderBoardEmbed(userListRepresentation, params)
+        );
+    }
+
+    _executeCommand(params) {
+        super._executeCommand(params);
+
+        const command = this.DAL.Leaderboard.getNumberOfPages(this.leaderBoardData.id).then((numberOfPages) => {
+            let result;
+
+            if (numberOfPages === 0) numberOfPages = 1;
+
+            const isRequestedPageValid = params.page <= numberOfPages && params.page >= 1;
+
+            if (isRequestedPageValid) {
+                params.numberOfPages = numberOfPages; 
+                this._handleValidRequest(params);
+                result = Promise.resolve(true);
+            } else {
+                result = Promise.resolve(false);
+            }
+
+            return result;
+        })
+
+        return command;
+    }
+
+    interceptLeaderBoardCommand(params) {
+        const command = this._executeCommand(params);
+
+        return command;
     }
 
     _updateLeaderBoardData() {
@@ -186,54 +156,48 @@ class Leaderboard {
         }, 600000);
     }
 
-    init() {
-        this.DAL.Leaderboard.insertChatLeaderBoard(this.guild.id);
-        this.DAL.Leaderboard.getLeaderBoardData(this.guild.id).then(
-            leaderBoardData => {
-                this.leaderBoardData = leaderBoardData;
+    _updateScore() {
+        const userId = this.msg.author.id;
 
-                this.DAL.Leaderboard.getTopUser(this.leaderBoardData.id).then(
-                    topUser => {
-                        if (topUser) {
-                            this.topUser = topUser;
-                            this._setActivity(this.topUser.user_id);
-                        }   
-                    } 
-                );
+        this.DAL.Leaderboard.getScore(this.leaderBoardData.id, userId).then((score) => {
+            let newScore;
 
-                this._startWatcher();
-            } 
-        );
+            if (score) {
+                newScore = score.score + 1;
+            } else {
+                newScore = 1;
+            }
+            
+            this.DAL.Leaderboard.insertScore(this.leaderBoardData.id, newScore, userId, this.msg.author.username);
+        });
     }
 
     onMessageCreate(msg) {
         this.msg = msg;
 
         if (!this.msg.author.bot) {
-            const userId = this.msg.author.id;
-
-            this.DAL.Leaderboard.getScore(this.leaderBoardData.id, userId).then((score) => {
-                let newScore;
-
-                if (score) {
-                    newScore = score.score + 1;
-                } else {
-                    newScore = 1;
-                }
-                
-                this.DAL.Leaderboard.insertScore(this.leaderBoardData.id, newScore, userId, this.msg.author.username);
-            });
-
-            this.DAL.Leaderboard.getTopUser(this.leaderBoardData.id).then(topUser => {
-                const hasTopUserChanged = this.topUser && topUser && this.topUser.user_id != topUser.user_id;
-
-                if (hasTopUserChanged) {
-                    this.topUser.user_id = topUser.user_id;
-
-                    this._setActivity(topUser.user_id); 
-                }
-            })
+            this._updateScore();
         }
+    }
+
+    onInteractionCreate(interaction) {
+        super.navigate(
+            interaction,
+            params => this.interceptLeaderBoardCommand(params)
+        );
+    }
+
+    init() {
+        this.DAL.Leaderboard.insertChatLeaderBoard(this.guild.id);
+        this.DAL.Leaderboard.getLeaderBoardData(this.guild.id).then(
+            leaderBoardData => {
+                this.leaderBoardData = leaderBoardData;
+
+                this._startWatcher();
+            } 
+        );
+
+        this.leaderBoardHelper = new LeaderBoardHelper(this.guild);
     }
 }
 
