@@ -35,16 +35,14 @@ module.exports = {
 ## Supported commands
 
 <p align="center">
-  <img src="https://i.imgur.com/EpaNclM.png">
+  <img src="https://i.imgur.com/cUI4vNj.png">
   <p align="center">Find the top message writers in the server.</p>
 </p>
 <br>
 <p align="center">
-  <img src="https://i.imgur.com/9kbqt7j.png">
+  <img src="https://i.imgur.com/CEjUD7K.png">
   <p align="center">Find who's the least active in your server.</p>
 </p>
-
-The boards output a maximum of 10 users.
 
 [node-shield-image]: https://img.shields.io/static/v1?label=node&message=16.8.0&color=green
 [mariadb-shield-image]: https://img.shields.io/static/v1?label=MariaDB&message=10.3.31&color=blue
