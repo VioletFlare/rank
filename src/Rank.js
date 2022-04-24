@@ -27,8 +27,16 @@ class Rank {
     }
 
     onInteractionCreate(interaction) {
-        this.Leaderboard.onInteractionCreate(interaction);
-        
+        const scope = interaction.customId.split("::")[0];
+
+        switch (scope) {
+            case "LeaderboardEmbed":
+                this.Leaderboard.onInteractionCreate(interaction);
+            break;
+            case "ActivityboardEmbed":
+                this.Activityboard.onInteractionCreate(interaction);
+            break;
+        }
     }
 
     onMessageReactionAdd(reaction, user) {
@@ -46,7 +54,7 @@ class Rank {
                 isNewMessage: true
             });
         } else if (msg.content === "r/leastactive") {
-            this.Activityboard.printLeastActiveUsersBoard({
+            this.Activityboard.interceptLeastActiveUsersBoardCommand({
                 msg: msg,
                 page: 1,
                 isNewMessage: true

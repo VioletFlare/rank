@@ -54,19 +54,26 @@ class ActivityboardHelper {
         }
     }
 
+    _getRealMembers(guildMembers, leastActiveUsers) {
+        const realMembers = new Map();
+
+        guildMembers.forEach((member, key) => {
+            if (!member.user.bot) {
+                realMembers.set(key, member);
+            }
+        });
+
+        leastActiveUsers.forEach(
+            user => this._enrichRealMembers(realMembers, user)
+        );
+
+        return realMembers;
+    }
+
+
     prepareLeastActiveUsersBoard(leastActiveUsers) {
-        return this.guild.members.fetch().then(allMembers => {
-            const realMembers = new Map();
-
-            allMembers.forEach((member, key) => {
-                if (!member.user.bot) {
-                    realMembers.set(key, member);
-                }
-            });
-
-            leastActiveUsers.forEach(
-                user => this._enrichRealMembers(realMembers, user)
-            );
+        return this.guild.members.fetch().then(guildMembers => {
+            const realMembers = this._getRealMembers(guildMembers, leastActiveUsers);
 
             const leastActiveMembers = [];
 

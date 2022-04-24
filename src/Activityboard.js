@@ -1,8 +1,10 @@
+const Board = require("./Board.js");
 const ActivityboardEmbed = require("./Embeds/ActivityboardEmbed.js");
 const ActivityboardHelper = require("./Helpers/ActivityboardHelper.js");
 
-class Activityboard {
+class Activityboard extends Board {
     constructor(guild, DAL) {
+        super();
         this.guild = guild;
         this.DAL = DAL;
         this.activityBoardData = {};
@@ -40,6 +42,13 @@ class Activityboard {
         }
     }
 
+    onInteractionCreate(interaction) {
+        super.navigate(
+            interaction,
+            params => this.interceptLeastActiveUsersBoardCommand(params)
+        );
+    }
+
     _sendLeastActiveUsersBoardEmbed(params, userListRepresentation) {
         const model = {
             userListRepresentation: userListRepresentation,
@@ -51,7 +60,7 @@ class Activityboard {
         ActivityboardEmbed.send(model);
     }
 
-    printLeastActiveUsersBoard(params) {
+    interceptLeastActiveUsersBoardCommand(params) {
         this.DAL.Activityboard.getLeastActiveUsers(this.activityBoardData.id).then(
             leastActiveUsers => this.activityboardHelper.prepareLeastActiveUsersBoard(leastActiveUsers)
         ).then(
