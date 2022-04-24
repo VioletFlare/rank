@@ -47,12 +47,11 @@ class ActivityboardProvider {
         return realMembers;
     }
 
-
-    _getLeastActiveRealMembers(leastActiveUsers) {
+    _getLeastActiveRealMembers(leastActiveUsers, page) {
         return this.guild.members.fetch().then(guildMembers => {
             const realMembers = this._getRealMembers(guildMembers, leastActiveUsers);
 
-            const leastActiveMembers = [];
+            let leastActiveMembers = [];
 
             realMembers.forEach(
                 member => leastActiveMembers.push(member)
@@ -68,8 +67,8 @@ class ActivityboardProvider {
 
     getLeastActiveRealMembers(activityBoardId) {
         return this.DAL.Activityboard.getLeastActiveUsers(activityBoardId).then(
-            leastActiveUsers => this._getLeastActiveRealMembers(leastActiveUsers)
-        );
+            leastActiveUsers =>  this._getLeastActiveRealMembers(leastActiveUsers)
+        )
     }
 
 }

@@ -55,19 +55,48 @@ class Activityboard extends Board {
             userListRepresentation: userListRepresentation,
             msg: params.msg,
             page: params.page,
-            isNewMessage: params.isNewMessage
+            isNewMessage: params.isNewMessage,
+            numberOfPages: params.numberOfPages
         }
 
         ActivityboardEmbed.send(model);
     }
 
+    _getPage(leastActiveMembers, offset) {
+        const limit = offset + 10;
+
+        return leastActiveMembers.slice(offset, limit);
+    }
+
+    _getNumberOfPages(entries) {
+        const numberOfPages = Math.floor(entries / 10) + 
+                              Math.ceil(
+                                  (entries % 10) / 10
+                              )
+    
+        return numberOfPages;
+    }
+
     _executeCommand(params) {
         super._executeCommand(params);
+        const offset = super.calculateOffset(params.page);
 
         return this.ActivityboardProvider.getLeastActiveRealMembers(this.activityBoardData.id).then(
-            leastActiveRealMembers => this.activityboardHelper.requestUserListRepresentation(leastActiveRealMembers)
-        ).then(
-            userListRepresentation => this._sendLeastActiveUsersBoardEmbed(params, userListRepresentation)
+            leastActiveRealMembers => {
+                const numberOfPages = this._getNumberOfPages(leastActiveRealMembers.length);
+
+                if (params.page >= 1 && params.page <= numberOfPages) {
+                    params.numberOfPages = numberOfPages;
+                    const leastActiveMembersPage = this._getPage(leastActiveRealMembers, offset);
+                    const userListRepresentation = this.activityboardHelper.requestUserListRepresentation(leastActiveMembersPage);
+    
+                    this._sendLeastActiveUsersBoardEmbed(params, userListRepresentation);
+
+                    return Promise.resolve(true);
+                } else {
+                    return Promise.resolve(false);
+                }
+            } 
         )
     }
 

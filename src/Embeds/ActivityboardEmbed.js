@@ -11,6 +11,8 @@ class ActivityboardEmbed {
         const footer = `
 ⌛ Time the user was last active.
 🌐 Timezone: ${timezone}
+---
+(Page ${model.page} of ${model.numberOfPages})
         `
         const embed = new Discord.MessageEmbed()
             .setColor('#DAA520')

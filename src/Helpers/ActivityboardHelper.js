@@ -7,8 +7,6 @@ class ActivityboardHelper {
     requestUserListRepresentation(leastActiveMembers) {
         let userListRepresentation = "";
 
-        leastActiveMembers = leastActiveMembers.slice(0, 10);
-
         leastActiveMembers.forEach((member, index) => {
             const mention = `<@${member.user.id}>`;
 
