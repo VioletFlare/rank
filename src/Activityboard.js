@@ -1,4 +1,5 @@
 const Board = require("./Board.js");
+const ActivityboardProvider = require("./Providers/ActivityboardProvider");
 const ActivityboardEmbed = require("./Embeds/ActivityboardEmbed.js");
 const ActivityboardHelper = require("./Helpers/ActivityboardHelper.js");
 
@@ -60,12 +61,20 @@ class Activityboard extends Board {
         ActivityboardEmbed.send(model);
     }
 
-    interceptLeastActiveUsersBoardCommand(params) {
-        this.DAL.Activityboard.getLeastActiveUsers(this.activityBoardData.id).then(
-            leastActiveUsers => this.activityboardHelper.prepareLeastActiveUsersBoard(leastActiveUsers)
+    _executeCommand(params) {
+        super._executeCommand(params);
+
+        return this.ActivityboardProvider.getLeastActiveRealMembers(this.activityBoardData.id).then(
+            leastActiveRealMembers => this.activityboardHelper.requestUserListRepresentation(leastActiveRealMembers)
         ).then(
             userListRepresentation => this._sendLeastActiveUsersBoardEmbed(params, userListRepresentation)
         )
+    }
+
+    interceptLeastActiveUsersBoardCommand(params) {
+        const command = this._executeCommand(params)
+
+        return command;
     }
 
     init() {
@@ -77,6 +86,7 @@ class Activityboard extends Board {
         );
 
         this.activityboardHelper = new ActivityboardHelper(this.guild);
+        this.ActivityboardProvider = new ActivityboardProvider(this.guild, this.DAL);
     }
 
 }

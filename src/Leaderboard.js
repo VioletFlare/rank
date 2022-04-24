@@ -102,6 +102,8 @@ class Leaderboard extends Board {
     }
 
     _executeCommand(params) {
+        super._executeCommand(params);
+
         const command = this.DAL.Leaderboard.getNumberOfPages(this.leaderBoardData.id).then((numberOfPages) => {
             let result;
 
@@ -124,10 +126,6 @@ class Leaderboard extends Board {
     }
 
     interceptLeaderBoardCommand(params) {
-        if (params.isNewMessage) {
-            this.messagePage[params.msg.id] = params.page;
-        }
-
         const command = this._executeCommand(params);
 
         return command;

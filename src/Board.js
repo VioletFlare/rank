@@ -38,6 +38,12 @@ class Board {
 
     }
 
+    _executeCommand(params) {
+        if (params.isNewMessage) {
+            this.messagePage[params.msg.id] = params.page;
+        }
+    }
+
     _getCurrentPage(navigationParams) {
         let currentPage = this.messagePage[navigationParams.interaction.message.reference.messageId];
  
