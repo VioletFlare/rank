@@ -6,7 +6,7 @@
 
 ## Description
 
-A bot that provides you with the information about the activity of users inside your server.
+A bot that provides information about users inside the server.
 
 ## Installation
 
@@ -36,7 +36,7 @@ module.exports = {
 
 <p align="center">
   <img src="https://i.imgur.com/cUI4vNj.png">
-  <p align="center">Find the top message writers in the server.</p>
+  <p align="center">Find the top message writers in the server. The counter resets periodically, after each reset assigns special roles to the users.</p>
 </p>
 <br>
 <p align="center">
