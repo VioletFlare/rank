@@ -7,15 +7,16 @@ class Instance {
     constructor(guild, DAL) {
         this.guild = guild;
         this.DAL = DAL;
+        
         this.storage = {
             leaderBoardData: {},
             activityBoardData: {}
         }
+
         this.Rank = new Rank(guild, DAL, this.storage);
         this.Leaderboard = new Leaderboard(guild, DAL, this.storage);
         this.Activityboard = new Activityboard(guild, DAL, this.storage);
         this.Help = new Help();
-        this.prefix = "r";
     }
 
     _setActivity() {
@@ -52,25 +53,8 @@ class Instance {
         this.Activityboard.onMessageReactionAdd(reaction, user);
     }
 
-    _splitCommand(msg) {
-        const indexOfFirstSpaceOccurrence = msg.content.indexOf(" ");
-        const firstPartOfCommand = msg.content.substring(0, indexOfFirstSpaceOccurrence);
-        const lastPartOfCommand = msg.content.substring(indexOfFirstSpaceOccurrence + 1, msg.content.length);
-        const splittedCommand = [firstPartOfCommand, lastPartOfCommand];
-    
-        return splittedCommand;
-    }
-
-    _parseCommand(msg) {
-        let splittedCommand = this._splitCommand(msg);
-        splittedCommand = splittedCommand.filter(string => string !== "" && string !== " ");
-        const prefix = splittedCommand[0] ? splittedCommand[0].toLowerCase() : "";
-        
-        if (prefix.includes(this.prefix)) {
-          const commandNameSplitted = splittedCommand[0].split("/");
-          const command = commandNameSplitted[1] ? commandNameSplitted[1].toLowerCase() : "";
-    
-          switch (command) {
+    _selectCommand(msg, command) {
+        switch (command.command) {
             case "leaderboard":
                 this.Leaderboard.interceptLeaderBoardCommand({
                     msg: msg, 
@@ -85,18 +69,27 @@ class Instance {
                     isNewMessage: true
                 });
             break;
+            case "rank":
+                this.Rank.interceptRankCommand({
+                    msg: msg,
+                    args: command.args
+                })
+            break;
             case "help":
                 this.Help.interceptHelpCommand({
                     msg: msg
                 });
             break;
-          }
         }
     }
 
-    onMessageCreate(msg) {
+    onMessageCreate(msg, command) {
         this.Leaderboard.onMessageCreate(msg);
         this.Activityboard.onMessageCreate(msg);
+
+        if (command) {
+            this._selectCommand(msg, command);
+        }
     }
 }
 

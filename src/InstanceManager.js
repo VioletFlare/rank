@@ -2,6 +2,7 @@ const Instance = require('./Instance.js');
 const config = require('../config.js');
 const Discord = require("discord.js");
 const DAL = require("./DAL/DataLayer.js");
+const CommandParser = require("./CommandParser.js");
 
 class InstanceManager {
     
@@ -13,6 +14,7 @@ class InstanceManager {
         });
 
         this.sessions = new Map();
+        this.commandParser = new CommandParser("r");
     }
 
     _onMessageCreate(msg) {
@@ -20,7 +22,9 @@ class InstanceManager {
         const instance = this.sessions.get(guildId);
         
         if (instance) {
-            instance.onMessageCreate(msg)
+            const command = this.commandParser.parse(msg);
+
+            instance.onMessageCreate(msg, command)
         }
     }
 

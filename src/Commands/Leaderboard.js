@@ -18,7 +18,7 @@ class Leaderboard extends Board {
         super();
         this.guild = guild;
         this.DAL = DAL;
-        this.leaderBoardData = storage.leaderBoardData;
+        this.storage = storage;
     }
 
     _assignRole(leaderBoard, roleName, position) {
@@ -62,14 +62,14 @@ class Leaderboard extends Board {
         this._clearRole("Veteran");
         this._clearRole("Advanced");
 
-        this.DAL.Leaderboard.getFirstThreePositions(this.leaderBoardData.id).then(leaderboard => {
+        this.DAL.Leaderboard.getFirstThreePositions(this.storage.leaderBoardData.id).then(leaderboard => {
             this._assignRole(leaderboard, "Famous", 0);
             this._assignRole(leaderboard, "Veteran", 1);
             this._assignRole(leaderboard, "Advanced", 2);
 
-            this.DAL.Leaderboard.resetLeaderBoard(this.leaderBoardData.id).then(result => {
+            this.DAL.Leaderboard.resetLeaderBoard(this.storage.leaderBoardData.id).then(result => {
                 //updating leaderboard with fresh data
-                this.leaderBoardData = result[0];
+                this.storage.leaderBoardData = result[0];
             })
         });
 
@@ -80,7 +80,7 @@ class Leaderboard extends Board {
         const model = {
             msg: params.msg,
             userListRepresentation: userListRepresentation,
-            leaderBoardData: this.leaderBoardData,
+            leaderBoardData: this.storage.leaderBoardData,
             isNewMessage: params.isNewMessage,
             numberOfPages: params.numberOfPages,
             page: params.page
@@ -93,7 +93,7 @@ class Leaderboard extends Board {
     _handleValidRequest(params) {
         const offset = super.calculateOffset(params.page);
     
-        this.DAL.Leaderboard.getLeaderBoard(this.leaderBoardData.id, offset)
+        this.DAL.Leaderboard.getLeaderBoard(this.storage.leaderBoardData.id, offset)
         .then(
             leaderboard => this.leaderBoardHelper.requestUserListRepresentation(leaderboard, offset)
         ).then(
@@ -104,7 +104,7 @@ class Leaderboard extends Board {
     _executeCommand(params) {
         super._executeCommand(params);
 
-        const command = this.DAL.Leaderboard.getNumberOfPages(this.leaderBoardData.id).then((numberOfPages) => {
+        const command = this.DAL.Leaderboard.getNumberOfPages(this.storage.leaderBoardData.id).then((numberOfPages) => {
             let result;
 
             if (numberOfPages === 0) numberOfPages = 1;
@@ -134,7 +134,7 @@ class Leaderboard extends Board {
     _updateLeaderBoardData() {
         this.DAL.Leaderboard.getLeaderBoardData(this.guild.id).then(
             leaderBoardData => {
-                this.leaderBoardData = leaderBoardData;
+                this.storage.leaderBoardData = leaderBoardData;
             } 
         );
     }
@@ -146,7 +146,7 @@ class Leaderboard extends Board {
         setInterval(() => {
             // 2592000000 ms - 1 Month
             // 604800000 ms - 1 Week
-            const shouldReset = Date.now() - this.leaderBoardData.last_reset_ts >= this.leaderBoardData.next_reset_time_offset;
+            const shouldReset = Date.now() - this.storage.leaderBoardData.last_reset_ts >= this.storage.leaderBoardData.next_reset_time_offset;
             
             if (shouldReset) {
                 this._handleReset();
@@ -159,7 +159,7 @@ class Leaderboard extends Board {
     _updateScore() {
         const userId = this.msg.author.id;
 
-        this.DAL.Leaderboard.getScore(this.leaderBoardData.id, userId).then((score) => {
+        this.DAL.Leaderboard.getScore(this.storage.leaderBoardData.id, userId).then((score) => {
             let newScore;
 
             if (score) {
@@ -168,7 +168,7 @@ class Leaderboard extends Board {
                 newScore = 1;
             }
             
-            this.DAL.Leaderboard.insertScore(this.leaderBoardData.id, newScore, userId, this.msg.author.username);
+            this.DAL.Leaderboard.insertScore(this.storage.leaderBoardData.id, newScore, userId, this.msg.author.username);
         });
     }
 
@@ -191,7 +191,7 @@ class Leaderboard extends Board {
         this.DAL.Leaderboard.insertChatLeaderBoard(this.guild.id);
         this.DAL.Leaderboard.getLeaderBoardData(this.guild.id).then(
             leaderBoardData => {
-                this.leaderBoardData = leaderBoardData;
+                this.storage.leaderBoardData = leaderBoardData;
 
                 this._startWatcher();
             } 

@@ -8,7 +8,7 @@ class Activityboard extends Board {
         super();
         this.guild = guild;
         this.DAL = DAL;
-        this.activityBoardData = storage.activityBoardData;
+        this.storage = storage;
     }
 
     onMessageCreate(msg) {
@@ -16,7 +16,7 @@ class Activityboard extends Board {
 
         if (!msg.author.bot) {
             this.DAL.Activityboard.insertLastMessageRecord(
-                this.activityBoardData.id, 
+                this.storage.activityBoardData.id, 
                 msg.author.id, 
                 msg.author.username
             );
@@ -26,7 +26,7 @@ class Activityboard extends Board {
     onMessageReactionAdd(reaction, user) {
         if (!user.bot) {
             this.DAL.Activityboard.insertLastReactionRecord(
-                this.activityBoardData.id, 
+                this.storage.activityBoardData.id, 
                 user.id, 
                 user.username
             )
@@ -36,7 +36,7 @@ class Activityboard extends Board {
     onVoiceStateUpdate(oldVoiceState, newVoiceState) {
         if (!newVoiceState.member.user.bot) {
             this.DAL.Activityboard.insertLastVoiceActivityRecord(
-                this.activityBoardData.id, 
+                this.storage.activityBoardData.id, 
                 newVoiceState.member.user.id, 
                 newVoiceState.member.user.username
             )
@@ -88,7 +88,7 @@ class Activityboard extends Board {
     _executeCommand(params) {
         super._executeCommand(params);
 
-        return this.ActivityboardProvider.getLeastActiveRealMembers(this.activityBoardData.id).then(
+        return this.ActivityboardProvider.getLeastActiveRealMembers(this.storage.activityBoardData.id).then(
             leastActiveRealMembers => {
                 const numberOfPages = this._getNumberOfPages(leastActiveRealMembers.length);
                 const isRequestedPageValid = params.page <= numberOfPages && params.page >= 1;
@@ -116,7 +116,7 @@ class Activityboard extends Board {
         this.DAL.Activityboard.insertActivityBoard(this.guild.id);
         this.DAL.Activityboard.getActivityBoardData(this.guild.id).then(
             activityBoardData => {
-                this.activityBoardData = activityBoardData;
+                this.storage.activityBoardData = activityBoardData;
             } 
         );
 
