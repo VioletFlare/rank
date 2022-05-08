@@ -44,5 +44,7 @@ module.exports = {
   <p align="center">Find who's the least active in your server.</p>
 </p>
 
+r/rank - show user's rank
+
 [node-shield-image]: https://img.shields.io/static/v1?label=node&message=16.8.0&color=green
 [mariadb-shield-image]: https://img.shields.io/static/v1?label=MariaDB&message=10.3.31&color=blue
