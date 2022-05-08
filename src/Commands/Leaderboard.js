@@ -1,6 +1,6 @@
 const Board = require("./Board.js");
-const LeaderBoardHelper = require("./Helpers/LeaderboardHelper.js");
-const LeaderboardEmbed = require("./Embeds/LeaderboardEmbed.js");
+const LeaderBoardHelper = require("../Helpers/LeaderboardHelper.js");
+const LeaderboardEmbed = require("../Embeds/LeaderboardEmbed.js");
 
 /*
     Three roles containing respectively "Famous", "Veteran" and "Advanced" should be present in the server;
@@ -14,11 +14,11 @@ const LeaderboardEmbed = require("./Embeds/LeaderboardEmbed.js");
 
 class Leaderboard extends Board {
 
-    constructor(guild, DAL) {
+    constructor(guild, DAL, storage) {
         super();
         this.guild = guild;
         this.DAL = DAL;
-        this.leaderBoardData = {};
+        this.leaderBoardData = storage.leaderBoardData;
     }
 
     _assignRole(leaderBoard, roleName, position) {

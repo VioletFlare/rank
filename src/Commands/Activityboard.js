@@ -1,14 +1,14 @@
 const Board = require("./Board.js");
-const ActivityboardProvider = require("./Providers/ActivityboardProvider");
-const ActivityboardEmbed = require("./Embeds/ActivityboardEmbed.js");
-const ActivityboardHelper = require("./Helpers/ActivityboardHelper.js");
+const ActivityboardProvider = require("../Providers/ActivityboardProvider");
+const ActivityboardEmbed = require("../Embeds/ActivityboardEmbed.js");
+const ActivityboardHelper = require("../Helpers/ActivityboardHelper.js");
 
 class Activityboard extends Board {
-    constructor(guild, DAL) {
+    constructor(guild, DAL, storage) {
         super();
         this.guild = guild;
         this.DAL = DAL;
-        this.activityBoardData = {};
+        this.activityBoardData = storage.activityBoardData;
     }
 
     onMessageCreate(msg) {

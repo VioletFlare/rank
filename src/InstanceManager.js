@@ -1,4 +1,4 @@
-const Rank = require('./Rank.js');
+const Instance = require('./Instance.js');
 const config = require('../config.js');
 const Discord = require("discord.js");
 const DAL = require("./DAL/DataLayer.js");
@@ -17,54 +17,54 @@ class InstanceManager {
 
     _onMessageCreate(msg) {
         const guildId = msg.guild.id;
-        const rank = this.sessions.get(guildId);
+        const instance = this.sessions.get(guildId);
         
-        if (rank) {
-            rank.onMessageCreate(msg)
+        if (instance) {
+            instance.onMessageCreate(msg)
         }
     }
 
     _onMessageReactionAdd(reaction, user) {
         const guildId = reaction.message.guildId;
-        const rank = this.sessions.get(guildId);
+        const instance = this.sessions.get(guildId);
 
-        if (rank) {
-            rank.onMessageReactionAdd(reaction, user);
+        if (instance) {
+            instance.onMessageReactionAdd(reaction, user);
         }
     }
 
     _onInteractionCreate(interaction) {
         const guildId = interaction.guildId;
-        const rank = this.sessions.get(guildId);
+        const instance = this.sessions.get(guildId);
 
-        if (rank) {
-            rank.onInteractionCreate(interaction);
+        if (instance) {
+            instance.onInteractionCreate(interaction);
         }
     }
 
     _onVoiceStateUpdate(oldVoiceState, newVoiceState) {
         const guildId = newVoiceState.guild.id;
-        const rank = this.sessions.get(guildId);
+        const instance = this.sessions.get(guildId);
 
-        if (rank) {
-            rank.onVoiceStateUpdate(oldVoiceState, newVoiceState);
+        if (instance) {
+            instance.onVoiceStateUpdate(oldVoiceState, newVoiceState);
         }
     }
 
     _initSessions() {
         if (!this.sessions.size) {
             for (const [guildId, guild] of this.client.guilds.cache.entries()) {
-                const rank = new Rank(guild, DAL);
-                rank.init();
-                this.sessions.set(guildId, rank);
+                const instance = new Instance(guild, DAL);
+                instance.init();
+                this.sessions.set(guildId, instance);
             }
         }
     }
 
     _initSession(guild) {
-        const rank = new Rank(guild, DAL);
-        rank.init();
-        this.sessions.set(guild.id, rank);
+        const instance = new Instance(guild, DAL);
+        instance.init();
+        this.sessions.set(guild.id, instance);
     }
 
     _setEvents() {
