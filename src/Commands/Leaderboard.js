@@ -57,12 +57,18 @@ class Leaderboard extends Board {
         }
     }
 
-    _handleReset() {
-        this._clearRole("Famous");
-        this._clearRole("Veteran");
-        this._clearRole("Advanced");
+    _resetRoles() {
+        const promise = this.guild.members.fetch().then(() => {
+            this._clearRole("Famous");
+            this._clearRole("Veteran");
+            this._clearRole("Advanced");
+        });
 
-        this.DAL.Leaderboard.getFirstThreePositions(this.storage.leaderBoardData.id).then(leaderboard => {
+        return promise;
+    }
+
+    _assingRoles() {
+        const promise = this.DAL.Leaderboard.getFirstThreePositions(this.storage.leaderBoardData.id).then(leaderboard => {
             this._assignRole(leaderboard, "Famous", 0);
             this._assignRole(leaderboard, "Veteran", 1);
             this._assignRole(leaderboard, "Advanced", 2);
@@ -72,6 +78,15 @@ class Leaderboard extends Board {
                 this.storage.leaderBoardData = result[0];
             })
         });
+
+        return promise;
+    }
+
+    _handleReset() {
+        this._resetRoles()
+            .then(
+                () => this._assingRoles()
+            )
 
         this.messagePage = {};
     }
