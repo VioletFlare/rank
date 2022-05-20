@@ -28,24 +28,31 @@ class CommandParser {
         })
     }
 
-    parse(msg) {
-        let splittedCommand = this._splitCommand(msg);
-        splittedCommand = splittedCommand.filter(string => string !== "" && string !== " ");
-        const prefix = splittedCommand[0] ? splittedCommand[0].toLowerCase() : "";
-        
-        let result;
+    _computeResult(splittedCommand) {
+        let result = null;
+        const commandNameSplitted = splittedCommand[0].split("/");
+        const prefix = commandNameSplitted[0].toLowerCase();
 
         if (prefix.includes(this.prefix)) {
           result = {};
-          const commandNameSplitted = splittedCommand[0].split("/");
           splittedCommand.shift();
           this._replaceMentions(splittedCommand);
 
           result.command = commandNameSplitted[1] ? commandNameSplitted[1].toLowerCase() : "";
           result.args = splittedCommand;
-        } else {
-            result = null;
         }
+
+        return result;
+    }
+
+    parse(msg) {
+        let splittedCommand = this._splitCommand(msg);
+        splittedCommand = splittedCommand.filter(string => string !== "" && string !== " ");
+        let result = null;
+
+        if (splittedCommand.length) {
+            result = this._computeResult(splittedCommand)
+        } 
 
         return result;
     }
