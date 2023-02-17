@@ -1,6 +1,7 @@
 const Board = require("./Board.js");
 const LeaderBoardHelper = require("../Helpers/LeaderboardHelper.js");
 const LeaderboardEmbed = require("../Embeds/LeaderboardEmbed.js");
+const AccountsProvider = require("../Providers/AccountsProvider");
 
 /*
     Three roles containing respectively "Famous", "Veteran" and "Advanced" should be present in the server;
@@ -41,6 +42,16 @@ class Leaderboard extends Board {
         }
     }
 
+    _awardCookie(leaderBoard, cookies, position) {
+        const shouldAwardCookies = leaderBoard[position] && leaderBoard[position].score != 0;
+
+        if (shouldAwardCookies) {
+            const userId = leaderBoard[position].user_id;
+
+            this.AccountsProvider.incrementCookies(this.guild.id, userId, cookies);
+        }
+    }
+
     _clearRole(roleName) {
         const role = this.guild.roles.cache.find(
             role => role.name.includes(roleName)
@@ -67,11 +78,24 @@ class Leaderboard extends Board {
         return promise;
     }
 
-    _assingRoles() {
+    _assingRoles(leaderboard) {
+        this._assignRole(leaderboard, "Famous", 0);
+        this._assignRole(leaderboard, "Veteran", 1);
+        this._assignRole(leaderboard, "Advanced", 2);
+    }
+
+    _awardCookies(leaderboard) {
+        if (this.storage.isEconomyEnabled) {
+            this._awardCookie(leaderboard, 15, 0);
+            this._awardCookie(leaderboard, 10, 1);
+            this._awardCookie(leaderboard, 5, 2);
+        }
+    }
+
+    _applyChanges() {
         const promise = this.DAL.Leaderboard.getFirstThreePositions(this.storage.leaderBoardData.id).then(leaderboard => {
-            this._assignRole(leaderboard, "Famous", 0);
-            this._assignRole(leaderboard, "Veteran", 1);
-            this._assignRole(leaderboard, "Advanced", 2);
+            this._assingRoles(leaderboard);
+            this._awardCookies(leaderboard);
 
             this.DAL.Leaderboard.resetLeaderBoard(this.storage.leaderBoardData.id).then(result => {
                 //updating leaderboard with fresh data
@@ -85,7 +109,7 @@ class Leaderboard extends Board {
     _handleReset() {
         this._resetRoles()
             .then(
-                () => this._assingRoles()
+                () => this._applyChanges()
             )
 
         this.messagePage = {};
@@ -213,6 +237,11 @@ class Leaderboard extends Board {
         );
 
         this.leaderBoardHelper = new LeaderBoardHelper(this.guild);
+        this.AccountsProvider = new AccountsProvider(this.guild, this.DAL);
+
+        this.AccountsProvider.isEconomyEnabled().then(isEnabled => {
+            this.storage.isEconomyEnabled = isEnabled;
+        });
     }
 }
 

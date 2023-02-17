@@ -1,6 +1,7 @@
 const Leaderboard = require('./LeaderboardDAL.js');
 const Activityboard = require('./ActivityboardDAL.js');
 const Rank = require('./RankDAL.js');
+const Accounts = require('./AccountsDAL.js');
 const DB = require('./DB.js');
 const mysql = require('mysql2');
 
@@ -9,7 +10,8 @@ class DataLayer {
     constructor() {
         this.Leaderboard = new Leaderboard(DB);
         this.Activityboard = new Activityboard(DB);
-        this.Rank = new Rank(DB)
+        this.Rank = new Rank(DB);
+        this.Accounts = new Accounts(DB);
     }
 
     insertGuild(guildId, name) {
