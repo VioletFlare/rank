@@ -227,14 +227,15 @@ class Leaderboard extends Board {
     }
 
     init() {
-        this.DAL.Leaderboard.insertChatLeaderBoard(this.guild.id);
-        this.DAL.Leaderboard.getLeaderBoardData(this.guild.id).then(
-            leaderBoardData => {
-                this.storage.leaderBoardData = leaderBoardData;
-
-                this._startWatcher();
-            } 
-        );
+        this.DAL.Leaderboard.insertChatLeaderBoard(this.guild.id).then(() => {
+            this.DAL.Leaderboard.getLeaderBoardData(this.guild.id).then(
+                leaderBoardData => {
+                    this.storage.leaderBoardData = leaderBoardData;
+    
+                    this._startWatcher();
+                } 
+            );
+        });
 
         this.leaderBoardHelper = new LeaderBoardHelper(this.guild);
         this.AccountsProvider = new AccountsProvider(this.guild, this.DAL);

@@ -46,5 +46,5 @@ module.exports = {
 
 r/rank - show user's rank
 
-[node-shield-image]: https://img.shields.io/static/v1?label=node&message=16.8.0&color=green
-[mariadb-shield-image]: https://img.shields.io/static/v1?label=MariaDB&message=10.3.31&color=blue
+[node-shield-image]: https://img.shields.io/static/v1?label=node&message=18.19.1&color=green
+[mariadb-shield-image]: https://img.shields.io/static/v1?label=MariaDB&message=10.6.16&color=blue

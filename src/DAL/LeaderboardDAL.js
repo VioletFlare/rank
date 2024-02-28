@@ -7,23 +7,30 @@ class Leaderboard {
     }
 
     insertChatLeaderBoard(guildId) {
-        this.DB.getConnection((err, connection) => {
-            if (err) throw err;
+        return new Promise(
+            (resolve, reject) => {
+                this.DB.getConnection((err, connection) => {
+                    if (err) throw err;
 
-            const query = `
-                INSERT IGNORE INTO rank_chatleaderboards
-                SET id = ${guildId},
-                guild_id = ${guildId},
-                last_reset_ts = ${Date.now()},
-                next_reset_time_offset = ${604800000},
-                name = '👑 Leader Board';
-            `
+                    const query = `
+                        INSERT IGNORE INTO rank_chatleaderboards
+                        SET id = ${guildId},
+                        guild_id = ${guildId},
+                        last_reset_ts = ${Date.now()},
+                        next_reset_time_offset = ${604800000},
+                        name = '👑 Leader Board';
+                    `
 
-            connection.query(query, (error, results, fields) => {
-                connection.release();
-                if (error) throw error;
-            });
-        });
+                    connection.query(query, (error, results, fields) => {
+                        connection.release();
+
+                        resolve(true);
+
+                        if (error) throw error;
+                    });
+                });
+            }
+        )
     }
 
     getLeaderBoardData(guildId) {

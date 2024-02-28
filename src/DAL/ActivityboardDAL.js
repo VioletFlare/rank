@@ -7,21 +7,28 @@ class Activityboard {
     }
 
     insertActivityBoard(guildId) {
-        this.DB.getConnection((err, connection) => {
-            if (err) throw err;
+        return new Promise(
+            (resolve, reject) => {
+                this.DB.getConnection((err, connection) => {
+                    if (err) throw err;
 
-            const query = `
-                INSERT IGNORE INTO rank_activityboards
-                SET id = ${guildId},
-                guild_id = ${guildId},
-                name = '🕒 Activity Board';
-            `
+                    const query = `
+                        INSERT IGNORE INTO rank_activityboards
+                        SET id = ${guildId},
+                        guild_id = ${guildId},
+                        name = '🕒 Activity Board';
+                    `
 
-            connection.query(query, (error, results, fields) => {
-                connection.release();
-                if (error) throw error;
-            });
-        });
+                    connection.query(query, (error, results, fields) => {
+                        connection.release();
+
+                        resolve(true);
+
+                        if (error) throw error;
+                    });
+                });
+            }
+        )
     }
 
     getActivityBoardData(guildId) {

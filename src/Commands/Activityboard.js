@@ -113,12 +113,13 @@ class Activityboard extends Board {
     }
 
     init() {
-        this.DAL.Activityboard.insertActivityBoard(this.guild.id);
-        this.DAL.Activityboard.getActivityBoardData(this.guild.id).then(
-            activityBoardData => {
-                this.storage.activityBoardData = activityBoardData;
-            } 
-        );
+        this.DAL.Activityboard.insertActivityBoard(this.guild.id).then(() => {
+            this.DAL.Activityboard.getActivityBoardData(this.guild.id).then(
+                activityBoardData => {
+                    this.storage.activityBoardData = activityBoardData;
+                } 
+            );
+        });
 
         this.activityboardHelper = new ActivityboardHelper(this.guild);
         this.ActivityboardProvider = new ActivityboardProvider(this.guild, this.DAL);
