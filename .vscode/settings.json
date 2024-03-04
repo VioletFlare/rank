@@ -1,0 +1,4 @@
+{
+    "docker.commands.run": "docker run -i --rm --env ENV_FLAG=--dev ${tag}",
+    "docker.commands.runInteractive": "docker run -i --rm --env ENV_FLAG=--dev ${tag}"
+}

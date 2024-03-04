@@ -1,0 +1,11 @@
+node_modules
+.vscode
+.git
+.gitignore
+.prettierrc
+README.md
+tests
+.dockerignore
+.jshintrc
+db.sql
+Dockerfile
