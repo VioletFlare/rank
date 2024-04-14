@@ -30,15 +30,19 @@ class Leaderboard extends Board {
         const shouldAssignRole = role && leaderBoard[position] && leaderBoard[position].score != 0;
 
         if (shouldAssignRole) {
-            this.guild.members.fetch(leaderBoard[position].user_id).then((member) => {
-                member.roles
-                .add(role)
-                .catch(
+            try {
+                this.guild.members.fetch(leaderBoard[position].user_id).then((member) => {
+                    member.roles
+                    .add(role)
+                    .catch(
+                        error => console.error(error)
+                    );
+                }).catch(
                     error => console.error(error)
                 );
-            }).catch(
-                error => console.error(error)
-            );
+            } catch (e) {
+                console.error("Couldn't Assign Role \n", e);
+            }
         }
     }
 

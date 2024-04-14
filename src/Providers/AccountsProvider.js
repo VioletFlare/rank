@@ -15,9 +15,16 @@ class AccountsProvider {
                 newCookiesAmount = value;
             }
 
-            this.guild.members.fetch(userId).then(user => {
-                this.DAL.Accounts.insertCookies(guildId, newCookiesAmount, userId, user.user.username);
-            });
+            try {
+                this.guild.members.fetch(userId).then(user => {
+                    this.DAL.Accounts.insertCookies(guildId, newCookiesAmount, userId, user.user.username);
+                })
+                .catch(
+                    error => console.error(error)
+                );
+            } catch (e) {
+                console.error("Couldn't Increment Cookies \n", e);
+            }
         });
     }
 
